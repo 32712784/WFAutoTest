@@ -1,0 +1,225 @@
+*** Settings ***
+Resource          ../../关键字封装/资源文件/通用封装(all_included).txt
+Library           Selenium2Library
+Resource          ERP公共操作封装_01查询操作.txt
+Resource          ERP公共操作封装_04AppGrid常用操作.txt
+Resource          ERP公共操作封装_03表单操作按钮.txt
+Resource          ERP公共操作封装_02列表操作按钮.txt
+Resource          ERP公共操作封装引用.txt
+
+*** Keywords ***
+编辑界面线下审批通过
+    [Arguments]    ${PageNameMode2}    ${PageNameMode3}    ${UserName}    ${PassWord}    ${companyPath}    ${FunName}
+    ...    ${Findname}    ${Findtext}    ${FrameName}=stage1    ${ListFrameName}=stage1/appIframe/appGrid    ${isQueryInView}=No
+    [Documentation]    *功能：*
+    ...
+    ...    从业务数据编辑界面提交审批 - 审批人审批通过
+    ...
+    ...    *参数说明*
+    ...
+    ...    ${PageNameMode2} :修改模式下的页面Title，当前是在修改模式下点击审批通过
+    ...    ${PageNameMode3} :查看模式下的页面Title，提交审批完成后页面会刷新为查看模式，在查看模式下关闭窗口
+    ...    ${UserName}：审批人的登录名称
+    ...    ${PassWord}：审批人的登录密码
+    ...    ${FunName}：审批人登录后需要进入操作的功能模块导航名称
+    ...    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${columnNamesAndValues}：双击列表记录时的行定位信息
+    ...
+    ...    *示例：*
+    ...
+    ...    线下审批通过 | ${PageNameMode2} | ${PageNameMode3} | ${UserName} | ${PassWord} |${FunName}|${FrameName} | ${ListFrameName} | ${Findname} | ${Findtext} | ${columnNamesAndValues}
+    ...
+    ...    线下审批通过 |修改合同变更 | 查看合同变更 | 李乾芳 | 1 | 项目运营管理(POM)/成本管理/合同执行/合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 建筑合同变更 | 变更名称=建筑合同变更
+    编辑界面提交审批    ${PageNameMode2}    ${PageNameMode3}
+    切换用户登录    ${UserName}    ${PassWord}    ${companyPath}
+    模块导航    ${FunName}
+    编辑界面审批通过    ${PageNameMode3}    ${Findname}    ${Findtext}    ${FrameName}    ${ListFrameName}    ${isQueryInView}
+
+编辑界面线下审批驳回
+    [Arguments]    ${PageNameMode2}    ${PageNameMode3}    ${UserName}    ${PassWord}    ${companyPath}    ${FunName}
+    ...    ${Findname}    ${Findtext}    ${FrameName}=stage1    ${ListFrameName}=stage1/appIframe/appGrid
+    [Documentation]    *功能：*
+    ...
+    ...    从业务数据编辑界面提交审批 - 审批人审批驳回
+    ...
+    ...    *参数说明*
+    ...
+    ...    ${PageNameMode2} :修改模式下的页面Title，当前是在修改模式下点击审批通过
+    ...    ${PageNameMode3} :查看模式下的页面Title，提交审批完成后页面会刷新为查看模式，在查看模式下关闭窗口
+    ...    ${UserName}：审批人的登录名称
+    ...    ${PassWord}：审批人的登录密码
+    ...    ${FunName}：审批人登录后需要进入操作的功能模块导航名称
+    ...    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${columnNamesAndValues}：双击列表记录时的行定位信息
+    ...
+    ...    *示例：*
+    ...
+    ...    线下审批通过 | ${PageNameMode2} | ${PageNameMode3} | ${UserName} | ${PassWord} |${FunName} | ${Findname} | ${Findtext}| ${FrameName}=stage1 | ${ListFrameName}=stage1/appIframe
+    ...
+    ...    线下审批通过 |修改合同变更 | 查看合同变更 | 李乾芳 | 1 | 项目运营管理(POM)/成本管理/合同执行/合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 建筑合同变更 | 变更名称=建筑合同变更
+    编辑界面提交审批    ${PageNameMode2}    ${PageNameMode3}
+    切换用户登录    ${UserName}    ${PassWord}    ${companyPath}
+    模块导航    ${FunName}
+    编辑界面审批驳回    ${PageNameMode2}    ${PageNameMode3}    ${Findname}    ${Findtext}    ${FrameName}    ${ListFrameName}
+
+编辑界面提交审批
+    [Arguments]    ${PageNameMode2}    ${PageNameMode3}
+    [Documentation]    ${PageNameMode2} :修改模式下的页面Title，当前是在修改模式下点击提交审批
+    ...    ${PageNameMode3} :查看模式下的页面Title，提交审批完成后页面会刷新为查看模式，在查看模式下关闭窗口
+    定位页面    ${PageNameMode2}
+    点击提交审批
+    定位页面    ${PageNameMode3}
+    点击关闭
+
+编辑界面审批通过
+    [Arguments]    ${PageNameMode3}    ${Findname}    ${Findtext}    ${FrameName}=stage1    ${ListFrameName}=stage1/appIframe/appGrid    ${isQueryInView}=No
+    [Documentation]    ${PageNameMode2} :修改模式下的页面Title，当前是在修改模式下点击审批通过
+    ...    ${PageNameMode3} :查看模式下的页面Title，提交审批完成后页面会刷新为查看模式，在查看模式下关闭窗口
+    ...    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${columnNamesAndValues}：双击列表记录时的行定位信息
+    ...
+    ...    示例：
+    ...    编辑界面审批通过 | 修改合同变更 | 查看合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 合同变更名称 | 变更名称=合同变更名称
+    定位页面    title=明源地产ERP
+    普通查询    ${FrameName}    ${Findname}    ${Findtext}    ${isQueryInView}
+    双击列表记录    ${ListFrameName}    ${Findname}=${Findtext}
+    定位页面    ${PageNameMode3}
+    sleep    5s
+    点击审批通过
+    定位页面    ${PageNameMode3}
+    点击关闭
+
+编辑界面审批驳回
+    [Arguments]    ${PageNameMode2}    ${PageNameMode3}    ${Findname}    ${Findtext}    ${FrameName}=stage1    ${ListFrameName}=stage1/appIframe/appGrid
+    ...    ${isQueryInView}=No
+    [Documentation]    ${PageNameMode2} :修改模式下的页面Title，当前是在修改模式下点击审批通过
+    ...    ${PageNameMode3} :查看模式下的页面Title，提交审批完成后页面会刷新为查看模式，在查看模式下关闭窗口
+    ...    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${columnNamesAndValues}：双击列表记录时的行定位信息
+    ...
+    ...    示例：
+    ...    编辑界面审批驳回 | 修改合同变更 | 查看合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 合同变更名称 | 变更名称=合同变更名称
+    定位页面    title=明源地产ERP
+    普通查询    ${FrameName}    ${Findname}    ${Findtext}    ${isQueryInView}
+    双击列表记录    ${ListFrameName}    ${Findname}=${Findtext}
+    定位页面    ${PageNameMode3}
+    点击审批驳回
+    定位页面    ${PageNameMode2}
+    点击关闭
+
+列表提交审批
+    [Arguments]    ${Findname}    ${Findtext}    ${FrameName}=stage1    ${AppGridMenuFrameName}=stage1/appIframe    ${ListFrameName}=stage1/appIframe/appGrid
+    [Documentation]    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${AppGridMenuFrameName}：列表菜单按钮所在Frame
+    ...
+    ...    示例：
+    ...    编辑界面审批驳回 | 修改合同变更 | 查看合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 合同变更名称 | 变更名称=合同变更名称
+    定位页面    title=明源地产ERP
+    普通查询    ${FrameName}    ${Findname}    ${Findtext}
+    单击列表记录    ${ListFrameName}    ${Findname}=${Findtext}
+    列表点击提交审批    ${AppGridMenuFrameName}
+
+列表审批驳回
+    [Arguments]    ${Findname}    ${Findtext}    ${FrameName}=stage1    ${AppGridMenuFrameName}=stage1/appIframe    ${ListFrameName}=stage1/appIframe/appGrid
+    [Documentation]    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${AppGridMenuFrameName}：列表菜单按钮所在Frame
+    ...
+    ...    示例：
+    ...    编辑界面审批驳回 | 修改合同变更 | 查看合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 合同变更名称 | 变更名称=合同变更名称
+    定位页面    title=明源地产ERP
+    普通查询    ${FrameName}    ${Findname}    ${Findtext}
+    单击列表记录    ${ListFrameName}    ${Findname}=${Findtext}
+    列表点击审批驳回    ${AppGridMenuFrameName}
+
+列表审批通过
+    [Arguments]    ${Findname}    ${Findtext}    ${FrameName}=stage1    ${AppGridMenuFrameName}=stage1/appIframe    ${ListFrameName}=stage1/appIframe/appGrid
+    [Documentation]    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${AppGridMenuFrameName}：列表菜单按钮所在Frame
+    ...
+    ...    示例：
+    ...    编辑界面审批驳回 | 修改合同变更 | 查看合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 合同变更名称 | 变更名称=合同变更名称
+    定位页面    title=明源地产ERP
+    普通查询    ${FrameName}    ${Findname}    ${Findtext}
+    单击列表记录    ${ListFrameName}    ${Findname}=${Findtext}
+    列表点击审批通过    ${AppGridMenuFrameName}
+
+列表界面线下审批通过
+    [Arguments]    ${Findname}    ${Findtext}    ${UserName}    ${PassWord}    ${companyPath}    ${FunName}
+    ...    ${FrameName}=stage1    ${AppGridMenuFrameName}=stage1/appIframe    ${ListFrameName}=stage1/appIframe/appGrid
+    [Documentation]    *功能：*
+    ...
+    ...    从业务数据编辑界面提交审批 - 审批人审批通过
+    ...
+    ...    *参数说明*
+    ...
+    ...    ${PageNameMode2} :修改模式下的页面Title，当前是在修改模式下点击审批通过
+    ...    ${PageNameMode3} :查看模式下的页面Title，提交审批完成后页面会刷新为查看模式，在查看模式下关闭窗口
+    ...    ${UserName}：审批人的登录名称
+    ...    ${PassWord}：审批人的登录密码
+    ...    ${FunName}：审批人登录后需要进入操作的功能模块导航名称
+    ...    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${columnNamesAndValues}：双击列表记录时的行定位信息
+    ...
+    ...    *示例：*
+    ...
+    ...    线下审批通过 | ${PageNameMode2} | ${PageNameMode3} | ${UserName} | ${PassWord} |${FunName}|${FrameName} | ${ListFrameName} | ${Findname} | ${Findtext} | ${columnNamesAndValues}
+    ...
+    ...    线下审批通过 |修改合同变更 | 查看合同变更 | 李乾芳 | 1 | 项目运营管理(POM)/成本管理/合同执行/合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 建筑合同变更 | 变更名称=建筑合同变更
+    列表提交审批    ${Findname}    ${Findtext}    ${FrameName}    ${AppGridMenuFrameName}    ${ListFrameName}
+    切换用户登录    ${UserName}    ${PassWord}    ${companyPath}
+    模块导航    ${FunName}
+    列表审批通过    ${Findname}    ${Findtext}    ${FrameName}    ${AppGridMenuFrameName}    ${ListFrameName}
+
+列表界面线下审批驳回
+    [Arguments]    ${Findname}    ${Findtext}    ${UserName}    ${PassWord}    ${companyPath}    ${FunName}
+    ...    ${FrameName}=stage1    ${AppGridMenuFrameName}=stage1/appIframe    ${ListFrameName}=stage1/appIframe/appGrid
+    [Documentation]    *功能：*
+    ...
+    ...    从业务数据编辑界面提交审批 - 审批人审批通过
+    ...
+    ...    *参数说明*
+    ...
+    ...    ${PageNameMode2} :修改模式下的页面Title，当前是在修改模式下点击审批通过
+    ...    ${PageNameMode3} :查看模式下的页面Title，提交审批完成后页面会刷新为查看模式，在查看模式下关闭窗口
+    ...    ${UserName}：审批人的登录名称
+    ...    ${PassWord}：审批人的登录密码
+    ...    ${FunName}：审批人登录后需要进入操作的功能模块导航名称
+    ...    ${FrameName}：调用普通查询关键字，普通查询关键字中需要传入查询控件进入的Frame
+    ...    ${ListFrameName}：调用双击列表记录关键字，双击列表记录关键字中需要传入列表控件进入的Frame
+    ...    ${Findname}：查询字段
+    ...    ${Findtext} ：查询字段值
+    ...    ${columnNamesAndValues}：双击列表记录时的行定位信息
+    ...
+    ...    *示例：*
+    ...
+    ...    线下审批通过 | ${PageNameMode2} | ${PageNameMode3} | ${UserName} | ${PassWord} |${FunName}|${FrameName} | ${ListFrameName} | ${Findname} | ${Findtext} | ${columnNamesAndValues}
+    ...
+    ...    线下审批通过 |修改合同变更 | 查看合同变更 | 李乾芳 | 1 | 项目运营管理(POM)/成本管理/合同执行/合同变更 | stage1/ifrmHtAlter | stage1/ifrmHtAlter/appIframe/appGrid | 变更名称 | 建筑合同变更 | 变更名称=建筑合同变更
+    列表提交审批    ${Findname}    ${Findtext}    ${FrameName}    ${AppGridMenuFrameName}    ${ListFrameName}
+    切换用户登录    ${UserName}    ${PassWord}    ${companyPath}
+    模块导航    ${FunName}
+    列表审批驳回    ${Findname}    ${Findtext}    ${FrameName}    ${AppGridMenuFrameName}    ${ListFrameName}

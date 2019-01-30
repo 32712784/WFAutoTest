@@ -1,0 +1,14 @@
+*** Settings ***
+Resource          ../内置库引用.txt
+
+*** Test Cases ***
+获取当前日期
+    ${string}    get time    YY-MM-DD    #返回2014-09-10 11:23:23
+    log    ${string}
+    ${string}    Get Substring    ${string}    0    10    #返回日期2014-09-10
+    ${string}    get time    year    #返回当前年份2014
+    ${string}    get time    year    NOW    #返回当前年份2014
+    ${string}    get time    month    #返回当前月份04
+    ${string}    get time    day    #返回当前日期29
+    ${string}    get time    day    NOW+1D    #返回当前日期+1天，30
+    ${year}    ${month}    ${day}    get time    year,month,day    #返回当前年月日，分别赋值给三个变量

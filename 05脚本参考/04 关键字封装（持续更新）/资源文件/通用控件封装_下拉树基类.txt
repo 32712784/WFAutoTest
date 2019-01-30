@@ -1,0 +1,39 @@
+﻿*** Settings ***
+Library           Selenium2Library
+Resource          通用操作封装.txt
+
+*** Keywords ***
+_setDropDownTree
+    [Arguments]    ${treePath}    ${locator}    ${imgType}=1    ${needBackToParentIframe}=1
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    所有下拉树控件的基类操作
+    ...
+    ...    *参数说明：*
+    ...
+    ...    treePath ： 下拉树路径，父路径与子路径之间用/分割
+    ...
+    ...    locator: 控件对应的table元素的定位信息
+    ...
+    ...    imgType: 控件对应的下拉图标类型
+    ...
+    ...    needBackToParentIframe:是否需要返回上层iframe，1：需要；0：不需要 。 默认需要；只有在选择节点后页面整体刷新时无需返回上层。
+    #hack popup
+    注入PopupMockup脚本
+    ${tableId}    Get Element Attribute    ${locator}@id
+    #点击下拉图标
+    run keyword if    ${imgType} == 1    Click Element Via Js    //table[@id='${tableId}']//img[@name='${tableId}_imgSelect']    ELSE    Click Element Via Js    //table[@id='${tableId}']//tr[1]//td[2]/img
+    #切入Popup模拟器Iframe
+    切入PopupMockup上下文
+    ${pathArr}    Evaluate    u'${treePath}'.split('/')
+    ${pathArrLen}    Evaluate    len(${pathArr})
+    ${j}    Evaluate    int(${pathArrLen})-1
+    #收缩树节点
+    _myExecuteJS    var table=window.document.getElementsByTagName('table')[0];var spans = table.getElementsByTagName('span');for(var i=0;i<spans.length;i++){if(spans[i].innerHTML == '[-]'){var Css = document.defaultView.getComputedStyle(spans[i], null);if(Css.display!="none"){spans[i].click();}}}
+    : FOR    ${i}    IN RANGE    ${pathArrLen}
+    \    Run Keyword If    ${i} < ${j}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var table=window.document.getElementsByTagName('table')[0];var nodeName='${pathArr[${i}]}';var rows=table.rows;for(var s=0;s<rows.length;s++){if(!(rows[s].style&&rows[s].style.display&&rows[s].style.display=='none')&&(rp(rows[s].innerText)=='[+]'+rp(nodeName)||rp(rows[s].innerText)=='[-]'+rp(nodeName))){var spans=rows[s].getElementsByTagName('span');for(var span in spans){if(spans[span].innerHTML=='[+]'){var Css = document.defaultView.getComputedStyle(spans[i], null);if(Css.display!="none"){spans[span].click();}}}return;}}return'0|||封装提示信息：未找到节点"'+nodeName+'"，请检查参数是否正确'    ELSE    _myExecuteJS
+    \    ...    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var table=window.document.getElementsByTagName('table')[0];var lastPath='${pathArr[${i}]}';var rows=table.rows;var currentRow;for(var row in rows){currentRow=rows[row];if(!(currentRow.style&&currentRow.style.display&&currentRow.style.display=='none')&&currentRow.cells&&currentRow.cells[0]&&rp(currentRow.cells[0].innerText.replace('[+]','').replace('[-]',''))==rp(lastPath)){currentRow.fireEvent('onclick');return;}}return'0|||封装提示信息：未找到节点"'+lastPath+'"，请检查参数是否正确'
+    #恢复iframe上下文
+    Run Keyword And Ignore Error    run keyword if    '${needBackToParentIframe}'=='1'    返回上级Iframe

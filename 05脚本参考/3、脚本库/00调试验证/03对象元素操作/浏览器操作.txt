@@ -1,0 +1,22 @@
+*** Settings ***
+Library           Selenium2Library
+
+*** Test Cases ***
+Window
+    [Documentation]    Select Window：select_window(self, locator=None)：用传入的locator去匹配当前浏览器的所有dom对象window里面的属性，如果匹配到了，就调用当前浏览器的SWITCH_TO_WINDOW命令，命令参数名为name，参数值即为locator得到的window handler对象。这里的locator不是selenium的locator，而是rf自己是实现的WindowManager，支持通过title，name，url的方式查询window
+    select window    title='新增项目'    #通过title定位，前面的"title="可以不写，但当出现title的名称与关键字名称重名时，必须加上title=
+    select window    url=%Index.aspx%    #通过URL定位
+    Close Window    #关掉当前弹出窗口，其实弹出窗口相当于一个缓存在cache中的browser，关闭时调用该browser的close方法。如果没有当前broswer，会Raise RuntimeError('No browser is open')异常
+    Get Window Names    #返回当前browser关联的所有dom对象window的name属性数组
+    Get Window Titles    #返回当前browser关联的所有dom对象document的title属性数组
+    Maximize Browser Window    #最大化当前浏览器窗口
+
+Browser
+    Close Browser    #关闭当前浏览器
+    Close All Browsers    #关闭当前所有打开的浏览器，清空cache
+    Open Browser    url='http://www.baidu.com'    #打开指定URL的浏览器页面
+    Switch Browser    1    #切换当前浏览器，可以用Open Browser返回的值（index，从1开始）或者Open Browser时指定的{alias}参数来指明切换到哪个浏览器。
+    Go Back    #回退
+
+激活当前选中的浏览器窗口
+    Focus    新增合同

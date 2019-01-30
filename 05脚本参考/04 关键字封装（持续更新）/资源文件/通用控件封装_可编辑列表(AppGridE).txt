@@ -1,0 +1,591 @@
+*** Settings ***
+Library           Selenium2Library
+Resource          通用工具方法.txt
+Resource          通用操作封装.txt
+
+*** Keywords ***
+Map_AppGridE_选中行
+    [Arguments]    ${columnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    通过列表头和对应的值选中某一行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    columnNamesAndValues：列表头和对应的值 ，格式为column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE_选中行 | 合同编号=xrqcb-002-2013-09-0003
+    Return From Keyword If    '${columnNamesAndValues}'=='' or '${columnNamesAndValues}'=='[NULL]'
+    _myExecuteJS    var rightTitleTable=window.document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${AppGridE_SelectedRowIndex}    _getRowIndex_AppGridE    ${columnNamesAndValues}
+    run keyword if    '${AppGridE_SelectedRowIndex}'=='-1'    fail    封装提示信息：未找到满足条件 "${columnNamesAndValues}" 的行，请检查参数是否正确。
+    #勾选可能的存在的checkbox
+    Execute Javascript    var divId='AppGridE_RightDataDiv';var appGridE_SelectedRowIndex=${AppGridE_SelectedRowIndex};var div=window.document.getElementById(divId);var table=div.getElementsByTagName('table')[0];var tr=table.rows[appGridE_SelectedRowIndex];var inputs=tr.getElementsByTagName('input');if(inputs&&inputs.length>0){for(var i=0;i<inputs.length;i++){if(inputs[i].type=='checkbox'&&!inputs[i].checked){var Css = document.defaultView.getComputedStyle(inputs[i], null);if (Css.display != "none"){inputs[i].click();}}}}var divId='AppGridE_LeftDataDiv';var appGridE_SelectedRowIndex=${AppGridE_SelectedRowIndex};var div=window.document.getElementById(divId);var table=div.getElementsByTagName('table')[0];var tr=table.rows[appGridE_SelectedRowIndex];var inputs=tr.getElementsByTagName('input');if(inputs&&inputs.length>0){for(var i=0;i<inputs.length;i++){if(inputs[i].type=='checkbox'&&!inputs[i].checked){var Css = document.defaultView.getComputedStyle(inputs[i], null);if (Css.display != "none"){inputs[i].click();}}}}
+    click element    //div[@id='AppGridE_RightDataDiv']//table[1]//tr[${AppGridE_SelectedRowIndex}+1]
+
+Map_AppGridE_批量选中多行
+    [Arguments]    ${locatorData}    ${locatorColumnNames}=    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量通过列表头和对应的值选中行（参数为数组格式）
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorData : 用来定位行的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    locatorColumnNames：用于定位的列名集合，列名之间用&连接，格式为columnA&columnB；默认值为空，表示数组中所有列名都是定位列。
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-09-28',u'说明说明322']]
+    ...
+    ...    Map_AppGridE_批量选中多行 | ${locatorData} | 款项类型&款项名称 | 计划付款日期=2014-09-28
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${splitStr}    Evaluate    u'^'
+    ${columnNamesAndValuesList}    _buildBatchInputVars    ${locatorData}    ${locatorColumnNames}    ${rowFilterCondition}    ${splitStr}
+    Return From Keyword If    '${columnNamesAndValuesList}'==''
+    ${columnNamesAndValuesArr}    Evaluate    u'${columnNamesAndValuesList}'.split('${splitStr}')
+    ${columnNamesAndValuesArrLen}    Evaluate    len(${columnNamesAndValuesArr})
+    : FOR    ${i}    IN RANGE    ${columnNamesAndValuesArrLen}
+    \    ${columnNamesAndValues}    Evaluate    ${columnNamesAndValuesArr}[${i}]
+    \    Map_AppGridE_选中行    ${columnNamesAndValues}
+
+Map_AppGridE_选中行_根据序号
+    [Arguments]    ${rowNumber}
+    [Documentation]    *功能：*
+    ...
+    ...    通过序号选中某一行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowNumber：序号，从1开始
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE_选中行_根据序号 | 10
+    Return From Keyword If    '${rowNumber}'=='' or '${rowNumber}'=='[NULL]'
+    _myExecuteJS    var rightTitleTable=window.document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    #勾选可能的存在的checkbox
+    Execute Javascript    var divId='AppGridE_RightDataDiv';var appGridE_SelectedRowIndex=${rowNumber}-1;var div=window.document.getElementById(divId);var table=div.getElementsByTagName('table')[0];var tr=table.rows[appGridE_SelectedRowIndex];var inputs=tr.getElementsByTagName('input');if(inputs&&inputs.length>0){for(var i=0;i<inputs.length;i++){if(inputs[i].type=='checkbox'&&!inputs[i].checked){var Css = document.defaultView.getComputedStyle(inputs[i], null);if (Css.display != "none"){inputs[i].click();}}}}
+    click element    //div[@id='AppGridE_RightDataDiv']//table[1]//tr[${rowNumber}]
+
+Map_AppGridE_双击行
+    [Arguments]    ${columnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    通过列表头和对应的值双击某一行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    columnNamesAndValues：列表头和对应的值 ，格式为column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE_双击行 | 合同编号=xrqcb-002-2013-09-0003
+    Return From Keyword If    '${columnNamesAndValues}'=='' or '${columnNamesAndValues}'=='[NULL]'
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${AppGridE_SelectedRowIndex}    _getRowIndex_AppGridE    ${columnNamesAndValues}
+    run keyword if    '${AppGridE_SelectedRowIndex}'=='-1'    fail    封装提示信息：未找到满足条件 "${columnNamesAndValues}" 的行，请检查参数是否正确。
+    Double Click Element    //div[@id='AppGridE_RightDataDiv']//table[1]//tr[${AppGridE_SelectedRowIndex}+1]
+
+Map_AppGridE_双击行_根据序号
+    [Arguments]    ${rowNumber}
+    [Documentation]    *功能：*
+    ...
+    ...    通过序号双击某一行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowNumber：序号，从1开始
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE_双击行_根据序号 | 10
+    Return From Keyword If    '${rowNumber}'=='' or '${rowNumber}'=='[NULL]'
+    _myExecuteJS    var rightTitleTable=window.document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    Double Click Element    //div[@id='AppGridE_RightDataDiv']//table[1]//tr[${rowNumber}]
+
+Map_AppGridE_编辑行
+    [Arguments]    ${locatorColumnNamesAndValues}    ${inputColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    编辑某一行的值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorColumnNamesAndValues : 用来定位行的列标头和对应的字段值,格式为column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    inputColumnNamesAndValues ： 要编辑的字段名称(列标头)和对应的值,格式为column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE_编辑行| 项目名称=万科城花璟苑-二期&合约规划名称=土地取得价款 | 对应金额=1300.00&预估变更金额=1200
+    Return From Keyword If    '${inputColumnNamesAndValues}'=='' or '${inputColumnNamesAndValues}'=='[NULL]' or '${locatorColumnNamesAndValues}'=='' or '${locatorColumnNamesAndValues}'=='[NULL]'
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    #parse locate column names and values
+    ${columnNameList}    ${valueList}    _parseQueryStringToArray    ${locatorColumnNamesAndValues}
+    #parse input columns and values
+    ${inputColumnNameList}    ${inputValueList}    _parseQueryStringToArray    ${inputColumnNamesAndValues}
+    _myExecuteJS    var columnNameList=${columnNameList};var valueList=${valueList};var inputColumnNameList=${inputColumnNameList};var inputValueList=${inputValueList};function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function isValueInArray(value,arr){for(var i=0;i<arr.length;i++){if(arr[i]==value)return true;}return false;};function getColumnLocation(columnName){var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv').getElementsByTagName('table')[0];var rowHeader=rightTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rp(rowHeader.cells[i].innerText)==rp(columnName)){return{'TableLocation':'Right','ColumnIndex':parseInt(i/2)};}}var tables=document.getElementById('AppGridE_LeftTitleDiv').getElementsByTagName('table');if(tables&&tables.length>0){var leftTitleTable=tables[0];rowHeader=leftTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rp(rowHeader.cells[i].innerText)==rp(columnName)){return{'TableLocation':'Left','ColumnIndex':parseInt(i/2)};}}}};function checkCellValueIsMatched(cell,columnValue){var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length){var input=inputs[0];if(rp(input.value)==columnValue){return true;}}var innerText=cell.innerText;if(innerText){return rp(innerText)==rp(columnValue);}else{return columnValue=='';}return false;}function FindSatisfiedRows(columnLocation,columnValue){var satifiedRowIndexList=[];if(columnLocation.TableLocation=='Right'){var rightDataTable=document.getElementById('AppGridE_RightDataDiv').getElementsByTagName('table')[0];for(var i=0;i<rightDataTable.rows.length;i++){if(checkCellValueIsMatched(rightDataTable.rows[i].cells[columnLocation.ColumnIndex],columnValue)){satifiedRowIndexList.push(i);}}}else if(columnLocation.TableLocation=='Left'){var leftDataTable=document.getElementById('AppGridE_LeftDataDiv').getElementsByTagName('table')[0];for(var i=0;i<leftDataTable.rows.length;i++){if(checkCellValueIsMatched(leftDataTable.rows[i].cells[columnLocation.ColumnIndex],columnValue)){satifiedRowIndexList.push(i);}}}return satifiedRowIndexList;};function getArrayIntersection(arr1,arr2){if(arr1.length==0||arr2.length==0)return[];var result=[];for(var i=0;i<arr1.length;i++){if(isValueInArray(arr1[i],arr2)){result.push(arr1[i]);}}return result;};var columnLocation,satisfiedRows,rowIndexIntersection=[],rowIndex;for(var i=0;i<columnNameList.length;i++){columnLocation=getColumnLocation(columnNameList[i]);if(!columnLocation){return'0|||封装提示信息：列名"'+columnNameList[i]+'"不存在，请检查参数是否正确';}satisfiedRows=FindSatisfiedRows(columnLocation,valueList[i]);if(i==0){rowIndexIntersection=satisfiedRows;}else{rowIndexIntersection=getArrayIntersection(rowIndexIntersection,satisfiedRows);}}if(rowIndexIntersection.length>0){rowIndex=rowIndexIntersection[0];}else{rowIndex=-1;}function getColumnControlType(rowIndex,columnLocation){var dataTable,td;if(columnLocation.TableLocation=='Right'){dataTable=document.getElementById('AppGridE_RightDataDiv').getElementsByTagName('table')[0];}else if(columnLocation.TableLocation=='Left'){dataTable=document.getElementById('AppGridE_LeftDataDiv').getElementsByTagName('table')[0];}td=dataTable.rows[rowIndex].cells[columnLocation.ColumnIndex];if(td.firstChild.firstChild&&td.firstChild.firstChild.tagName&&td.firstChild.firstChild.tagName.toLowerCase()=='span'&&td.firstChild.firstChild.className.indexOf('AGE_Sel')>-1){return'AGE_Sel';}else if(td.firstChild.firstChild&&td.firstChild.firstChild.tagName&&td.firstChild.firstChild.tagName.toLowerCase()=='input'&&td.firstChild.firstChild.className.indexOf('AGE_num')>-1){return'AGE_num';}else if(td.firstChild.firstChild&&td.firstChild.firstChild.tagName&&td.firstChild.firstChild.tagName.toLowerCase()=='table'){var inputs=td.firstChild.firstChild.getElementsByTagName('input');for(var i=0;i<inputs.length;i++){if(inputs[i].className.indexOf('AGE_Dtm')>-1){return'AGE_Dtm';}}}else if(td.firstChild.firstChild&&td.firstChild.firstChild.tagName&&td.firstChild.firstChild.tagName.toLowerCase()=='input'&&td.firstChild.firstChild.className.indexOf('AGE_txt')>-1){return'AGE_txt';}return'';}var inputColumnIndexArr=[];var inputColumnTableLocationArr=[];var inputColumnControlTypeArr=[];if(rowIndex>-1){for(var i=0;i<inputColumnNameList.length;i++){columnLocation=getColumnLocation(inputColumnNameList[i]);if(!columnLocation){return'0|||封装提示信息：列名"'+inputColumnNameList[i]+'"不存在，请检查参数是否正确';}inputColumnIndexArr.push(columnLocation.ColumnIndex);inputColumnTableLocationArr.push(columnLocation.TableLocation);var controlType=getColumnControlType(rowIndex,columnLocation);inputColumnControlTypeArr.push(controlType);}}window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_RowIndex',rowIndex);window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_InputColumnIndexList',inputColumnIndexArr.join('^^'));window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_InputValueList',inputValueList.join('^^'));window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_InputColumnTableLocationList',inputColumnTableLocationArr.join('^^'));window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_InputColumnControlTypeList',inputColumnControlTypeArr.join('^^'));
+    ${AppGridE_RowIndex}    Get Element Attribute    //html[1]@AppGridE_RowIndex
+    run keyword if    '${AppGridE_RowIndex}'=='-1'    fail    封装提示信息：未找到满足条件 "${locatorColumnNamesAndValues}" 的行，请检查参数是否正确。
+    ${AppGridE_InputColumnIndexList}    Get Element Attribute    //html[1]@AppGridE_InputColumnIndexList
+    ${AppGridE_InputValueList}    Get Element Attribute    //html[1]@AppGridE_InputValueList
+    ${AppGridE_InputColumnTableLocationList}    Get Element Attribute    //html[1]@AppGridE_InputColumnTableLocationList
+    ${AppGridE_InputColumnControlTypeList}    Get Element Attribute    //html[1]@AppGridE_InputColumnControlTypeList
+    ${AppGridE_InputColumnIndexArr}    Evaluate    u'${AppGridE_InputColumnIndexList}'.split('^^')
+    ${AppGridE_InputValueArr}    Evaluate    u'${AppGridE_InputValueList}'.split('^^')
+    ${AppGridE_InputColumnTableLocationArr}    Evaluate    u'${AppGridE_InputColumnTableLocationList}'.split('^^')
+    ${AppGridE_InputColumnControlTypeArr}    Evaluate    u'${AppGridE_InputColumnControlTypeList}'.split('^^')
+    ${inputColumnCount}    Evaluate    len(${AppGridE_InputColumnIndexArr})
+    : FOR    ${i}    IN RANGE    ${inputColumnCount}
+    \    run keyword if    '${AppGridE_InputColumnControlTypeArr[${i}]}' == 'AGE_Sel'    _setValue_AppGridE_Sel    ${AppGridE_RowIndex}    ${AppGridE_InputColumnIndexArr[${i}]}    ${AppGridE_InputColumnTableLocationArr[${i}]}
+    \    ...    ${AppGridE_InputValueArr[${i}]}    ELSE IF    '${AppGridE_InputColumnControlTypeArr[${i}]}' != ''    _setValue_AppGridE_txt    ${AppGridE_RowIndex}
+    \    ...    ${AppGridE_InputColumnIndexArr[${i}]}    ${AppGridE_InputColumnTableLocationArr[${i}]}    ${AppGridE_InputValueArr[${i}]}    ELSE    Run Keyword And Continue On Failure
+    \    ...    fail    封装提示信息：第${AppGridE_RowIndex}行，第${AppGridE_InputColumnIndexArr[${i}]}列无法编辑
+
+Map_AppGridE_编辑行_根据序号
+    [Arguments]    ${rowNumber}    ${inputColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    编辑某一行的值(通过行号定位，仅在无法定位行的场景下使用)
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowNumber : 行号，从1开始
+    ...
+    ...    inputColumnNamesAndValues ： 要编辑的字段名称(列标头)和对应的值(行标题有换行的用|分割),格式为column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE_编辑行_根据序号 | 1 | 对应金额=1300.00&预估变更金额=1200
+    Return From Keyword If    '${inputColumnNamesAndValues}'=='' or '${inputColumnNamesAndValues}'=='[NULL]' or '${rowNumber}'=='' or '${rowNumber}'=='[NULL]'
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    #parse input columns and values
+    ${inputColumnNameList}    ${inputValueList}    _parseQueryStringToArray    ${inputColumnNamesAndValues}
+    _myExecuteJS    var inputColumnNameList=${inputColumnNameList};var inputValueList=${inputValueList};function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function getColumnLocation(columnName){var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv').getElementsByTagName('table')[0];var rowHeader=rightTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rp(rowHeader.cells[i].innerText)==columnName){return{'TableLocation':'Right','ColumnIndex':parseInt(i/2)};}}var tables=document.getElementById('AppGridE_LeftTitleDiv').getElementsByTagName('table');if(tables&&tables.length>0){var leftTitleTable=tables[0];rowHeader=leftTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rp(rowHeader.cells[i].innerText)==columnName){return{'TableLocation':'Left','ColumnIndex':parseInt(i/2)};}}}};var rowIndex=${rowNumber}-1;function getColumnControlType(rowIndex,columnLocation){var dataTable,td;if(columnLocation.TableLocation=='Right'){dataTable=document.getElementById('AppGridE_RightDataDiv').getElementsByTagName('table')[0];}else if(columnLocation.TableLocation=='Left'){dataTable=document.getElementById('AppGridE_LeftDataDiv').getElementsByTagName('table')[0];}td=dataTable.rows[rowIndex].cells[columnLocation.ColumnIndex];if(td.firstChild.firstChild&&td.firstChild.firstChild.tagName&&td.firstChild.firstChild.tagName.toLowerCase()=='span'&&td.firstChild.firstChild.className.indexOf('AGE_Sel')>-1){return'AGE_Sel';}else if(td.firstChild.firstChild&&td.firstChild.firstChild.tagName&&td.firstChild.firstChild.tagName.toLowerCase()=='input'&&td.firstChild.firstChild.className.indexOf('AGE_num')>-1){return'AGE_num';}else if(td.firstChild.firstChild&&td.firstChild.firstChild.tagName&&td.firstChild.firstChild.tagName.toLowerCase()=='table'){var inputs=td.firstChild.firstChild.getElementsByTagName('input');for(var i=0;i<inputs.length;i++){if(inputs[i].className.indexOf('AGE_Dtm')>-1){return'AGE_Dtm';}}}else if(td.firstChild.firstChild&&td.firstChild.firstChild.tagName&&td.firstChild.firstChild.tagName.toLowerCase()=='input'&&td.firstChild.firstChild.className.indexOf('AGE_txt')>-1){return'AGE_txt';}return'';}var inputColumnIndexArr=[];var inputColumnTableLocationArr=[];var inputColumnControlTypeArr=[];for(var i=0;i<inputColumnNameList.length;i++){columnLocation=getColumnLocation(inputColumnNameList[i]);if(!columnLocation){return'0|||封装提示信息：列名"'+inputColumnNameList[i]+'"不存在，请检查参数是否正确';}inputColumnIndexArr.push(columnLocation.ColumnIndex);inputColumnTableLocationArr.push(columnLocation.TableLocation);var controlType=getColumnControlType(rowIndex,columnLocation);inputColumnControlTypeArr.push(controlType);}window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_InputColumnIndexList',inputColumnIndexArr.join('^^'));window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_InputValueList',inputValueList.join('^^'));window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_InputColumnTableLocationList',inputColumnTableLocationArr.join('^^'));window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_InputColumnControlTypeList',inputColumnControlTypeArr.join('^^'));
+    ${AppGridE_RowIndex}    Evaluate    int('${rowNumber}')-1
+    ${AppGridE_InputColumnIndexList}    Get Element Attribute    //html[1]@AppGridE_InputColumnIndexList
+    ${AppGridE_InputValueList}    Get Element Attribute    //html[1]@AppGridE_InputValueList
+    ${AppGridE_InputColumnTableLocationList}    Get Element Attribute    //html[1]@AppGridE_InputColumnTableLocationList
+    ${AppGridE_InputColumnControlTypeList}    Get Element Attribute    //html[1]@AppGridE_InputColumnControlTypeList
+    ${AppGridE_InputColumnIndexArr}    Evaluate    u'${AppGridE_InputColumnIndexList}'.split('^^')
+    ${AppGridE_InputValueArr}    Evaluate    u'${AppGridE_InputValueList}'.split('^^')
+    ${AppGridE_InputColumnTableLocationArr}    Evaluate    u'${AppGridE_InputColumnTableLocationList}'.split('^^')
+    ${AppGridE_InputColumnControlTypeArr}    Evaluate    u'${AppGridE_InputColumnControlTypeList}'.split('^^')
+    ${inputColumnCount}    Evaluate    len(${AppGridE_InputColumnIndexArr})
+    : FOR    ${i}    IN RANGE    ${inputColumnCount}
+    \    run keyword if    '${AppGridE_InputColumnControlTypeArr[${i}]}' == 'AGE_Sel'    _setValue_AppGridE_Sel    ${AppGridE_RowIndex}    ${AppGridE_InputColumnIndexArr[${i}]}    ${AppGridE_InputColumnTableLocationArr[${i}]}
+    \    ...    ${AppGridE_InputValueArr[${i}]}    ELSE IF    '${AppGridE_InputColumnControlTypeArr[${i}]}' != ''    _setValue_AppGridE_txt    ${AppGridE_RowIndex}
+    \    ...    ${AppGridE_InputColumnIndexArr[${i}]}    ${AppGridE_InputColumnTableLocationArr[${i}]}    ${AppGridE_InputValueArr[${i}]}    ELSE    Run Keyword And Continue On Failure
+    \    ...    fail    封装提示信息：第${AppGridE_RowIndex}行，第${AppGridE_InputColumnIndexArr[${i}]}列无法编辑
+
+Map_AppGridE_批量编辑多行
+    [Arguments]    ${locatorAndInputData}    ${locatorColumnNames}    ${inputColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量编辑多行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorAndInputData : 用来定位行及要输入的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    如果某列数据既用于定位，又用于输入，则数据值用^^分割，前半部分的值用于定位，后半部分值用于输入。
+    ...
+    ...    locatorColumnNames ：用于定位的列头集合，列与列之间用&连接，如columnA&columnB
+    ...
+    ...    inputColumnNames ：需要输入值的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndInputData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款^^应扣款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    Map_AppGridE_批量编辑多行 | ${locatorAndInputData} | 序号 | 款项类型&款项名称&计划付款金额&计划付款日期&付款说明
+    ...
+    ...    Map_AppGridE_批量编辑多行 | ${locatorAndInputData} | 序号&款项类型 | 款项类型&款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndInputData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${locatorColumnNamesAndValuesList}    ${inputColumnNamesAndValuesList}    _buildBatchLocatorAndInputVars    ${locatorAndInputData}    ${locatorColumnNames}    ${inputColumnNames}    ${rowFilterCondition}
+    Return From Keyword If    '${locatorColumnNamesAndValuesList}'=='' or '${inputColumnNamesAndValuesList}'==''
+    ${locatorColumnNamesAndValuesArr}    Evaluate    u'${locatorColumnNamesAndValuesList}'.split('|')
+    ${inputColumnNamesAndValuesArr}    Evaluate    u'${inputColumnNamesAndValuesList}'.split('|')
+    ${columnNamesAndValuesArrLen}    Evaluate    len(${locatorColumnNamesAndValuesArr})
+    : FOR    ${i}    IN RANGE    ${columnNamesAndValuesArrLen}
+    \    ${locatorColumnNamesAndValues}    Evaluate    ${locatorColumnNamesAndValuesArr}[${i}]
+    \    ${inputColumnNamesAndValues}    Evaluate    ${inputColumnNamesAndValuesArr}[${i}]
+    \    Map_AppGridE_编辑行    ${locatorColumnNamesAndValues}    ${inputColumnNamesAndValues}
+
+Map_AppGridE_批量编辑多行_根据序号
+    [Arguments]    ${inputData}    ${rowNumberColumnName}    ${inputColumnNames}=    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量编辑多行（根据序号）
+    ...
+    ...    *参数说明：*
+    ...
+    ...    inputData : 要输入的数据，一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    rowNumberColumnName：序号对应的列名
+    ...
+    ...    inputColumnNames：需要输入的列头集合，列与列之间用&连接，如columnC&columnD；不填表示除序号列之外，所有列都要输入。
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${inputData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    Map_AppGridE_批量编辑多行_根据序号 | ${inputData} | 序号 | 计划付款金额&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${inputData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${inputColumnNamesAndValuesList}    ${rowNumberList}    _buildBatchInputVars_containRowNumberColumn    ${inputData}    ${rowNumberColumnName}    ${inputColumnNames}    ${rowFilterCondition}
+    Return From Keyword If    '${inputColumnNamesAndValuesList}'=='' or '${rowNumberList}'==''
+    ${rowNumberArr}    Evaluate    u'${rowNumberList}'.split('|')
+    ${inputColumnNamesAndValuesArr}    Evaluate    u'${inputColumnNamesAndValuesList}'.split('|')
+    ${rowCount}    Evaluate    len(${rowNumberArr})
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${rowNumber}    Evaluate    ${rowNumberArr}[${i}]
+    \    ${inputColumnNamesAndValues}    Evaluate    ${inputColumnNamesAndValuesArr}[${i}]
+    \    Map_AppGridE_编辑行_根据序号    ${rowNumber}    ${inputColumnNamesAndValues}
+
+Map_AppGridE_批量编辑行_按钮操作
+    [Arguments]    ${locatorAndInputData}    ${locatorColumnNames}    ${inputColumnNames}    ${rowFilterCondition}=    ${addNewButtonIframe}=    ${addNewButtonMenuText}=新增
+    [Documentation]    *功能：*
+    ...
+    ...    批量新增多行（包括点击新增按钮和录入行数据）
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorAndInputData : 用来定位行及要输入的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...
+    ...    locatorColumnNames ：用于定位的列头集合，列与列之间用&连接，如columnA&columnB
+    ...
+    ...    inputColumnNames ：需要输入值的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    addNewButtonIframe：新增按钮所在的iframe(绝对路径)，如果新增按钮iframe在AppGridE的上级路径，则不用传此参数。
+    ...
+    ...    addNewButtonMenuText：新增按钮的文本，默认值为“新增”
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndInputData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    Map_AppGridE_批量编辑行_按钮操作 | ${locatorAndInputData} | 序号 | 款项类型&款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndInputData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${locatorColumnNamesAndValuesList}    ${inputColumnNamesAndValuesList}    _buildBatchLocatorAndInputVars    ${locatorAndInputData}    ${locatorColumnNames}    ${inputColumnNames}    ${rowFilterCondition}
+    Return From Keyword If    '${locatorColumnNamesAndValuesList}'=='' or '${inputColumnNamesAndValuesList}' == ''
+    ${locatorColumnNamesAndValuesArr}    Evaluate    u'${locatorColumnNamesAndValuesList}'.split('|')
+    ${inputColumnNamesAndValuesArr}    Evaluate    u'${inputColumnNamesAndValuesList}'.split('|')
+    ${columnNamesAndValuesArrLen}    Evaluate    len(${locatorColumnNamesAndValuesArr})
+    ${rowCount}    Map_AppGridE_获取记录条数
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${locatorColumnNamesAndValues}    Evaluate    ${locatorColumnNamesAndValuesArr}[${i}]
+    \    ${inputColumnNamesAndValues}    Evaluate    ${inputColumnNamesAndValuesArr}[${i}]
+    \    Map_AppGridE_编辑行    ${locatorColumnNamesAndValues}    ${inputColumnNamesAndValues}
+    Return From Keyword If    ${rowCount} >= ${columnNamesAndValuesArrLen}
+    ${parentIframe}    _getParentIframe
+    ${currentIframe}    _getCurrentIframe
+    : FOR    ${i}    IN RANGE    ${rowCount}    ${columnNamesAndValuesArrLen}
+    \    run keyword if    '${addNewButtonIframe}'==''    返回上级Iframe
+    \    run keyword if    '${addNewButtonIframe}'!=''    unselect frame
+    \    run keyword if    '${addNewButtonIframe}'!=''    select frame    ${addNewButtonIframe}
+    \    Map_AppGridMenu_点击列表菜单项    ${addNewButtonMenuText}
+    \    ${locatorColumnNamesAndValues}    Evaluate    ${locatorColumnNamesAndValuesArr}[${i}]
+    \    ${inputColumnNamesAndValues}    Evaluate    ${inputColumnNamesAndValuesArr}[${i}]
+    \    unselect frame
+    \    run keyword if    '${parentIframe}'==''    select frame    ${currentIframe}    ELSE    select frame
+    \    ...    ${parentIframe}/${currentIframe}
+    \    Map_AppGridE_编辑行    ${locatorColumnNamesAndValues}    ${inputColumnNamesAndValues}
+
+Map_AppGridE_批量编辑行_按钮操作_根据序号
+    [Arguments]    ${inputData}    ${rowNumberColumnName}    ${inputColumnNames}=    ${rowFilterCondition}=    ${addNewButtonIframe}=    ${addNewButtonMenuText}=新增
+    [Documentation]    *功能：*
+    ...
+    ...    批量新增多行_根据序号（包括点击新增按钮和录入行数据）
+    ...
+    ...    *参数说明：*
+    ...
+    ...    inputData : 要输入的数据，一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    rowNumberColumnName：序号对应的列名
+    ...
+    ...    inputColumnNames：需要输入的列头集合，列与列之间用&连接，如columnC&columnD；不填表示除序号列之外，所有列都要输入。
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    addNewButtonIframe：新增按钮所在的iframe(绝对路径)，如果新增按钮iframe在AppGridE的上级路径，则不用传此参数。
+    ...
+    ...    addNewButtonMenuText：新增按钮的文本，默认值为“新增”
+    ...
+    ...    *示例：*
+    ...
+    ...    ${inputData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    Map_AppGridE_批量编辑行_按钮操作_根据序号 | ${inputData} | 序号 | 计划付款金额&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${inputData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${inputColumnNamesAndValuesList}    ${rowNumberList}    _buildBatchInputVars_containRowNumberColumn    ${inputData}    ${rowNumberColumnName}    ${inputColumnNames}    ${rowFilterCondition}
+    Return From Keyword If    '${inputColumnNamesAndValuesList}'=='' or '${rowNumberList}' ==''
+    ${rowNumberArr}    Evaluate    u'${rowNumberList}'.split('|')
+    ${inputColumnNamesAndValuesArr}    Evaluate    u'${inputColumnNamesAndValuesList}'.split('|')
+    ${dataRowCount}    Evaluate    len(${rowNumberArr})
+    ${recordCount}    Map_AppGridE_获取记录条数
+    : FOR    ${i}    IN RANGE    ${recordCount}
+    \    ${rowNumber}    Evaluate    ${rowNumberArr}[${i}]
+    \    ${inputColumnNamesAndValues}    Evaluate    ${inputColumnNamesAndValuesArr}[${i}]
+    \    Map_AppGridE_编辑行_根据序号    ${rowNumber}    ${inputColumnNamesAndValues}
+    Return From Keyword If    ${recordCount} >= ${dataRowCount}
+    ${parentIframe}    _getParentIframe
+    ${currentIframe}    _getCurrentIframe
+    : FOR    ${i}    IN RANGE    ${recordCount}    ${dataRowCount}
+    \    run keyword if    '${addNewButtonIframe}'==''    返回上级Iframe
+    \    run keyword if    '${addNewButtonIframe}'!=''    unselect frame
+    \    run keyword if    '${addNewButtonIframe}'!=''    select frame    ${addNewButtonIframe}
+    \    Map_AppGridMenu_点击列表菜单项    ${addNewButtonMenuText}
+    \    ${rowNumber}    Evaluate    ${rowNumberArr}[${i}]
+    \    ${inputColumnNamesAndValues}    Evaluate    ${inputColumnNamesAndValuesArr}[${i}]
+    \    unselect frame
+    \    run keyword if    '${parentIframe}'==''    select frame    ${currentIframe}    ELSE    select frame
+    \    ...    ${parentIframe}/${currentIframe}
+    \    Map_AppGridE_编辑行_根据序号    ${rowNumber}    ${inputColumnNamesAndValues}
+
+Map_AppGridE_点击单元格内链接
+    [Arguments]    ${locatorColumnNamesAndValues}    ${linkColumnName}    ${linkText}
+    [Documentation]    *功能：*
+    ...
+    ...    点击某一行中某一列的超链接
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorColumnNamesAndValues : 用来定位行的列标头和对应的字段值,格式为column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    linkColumnName ：超链接所在列名
+    ...
+    ...    linkText ： 超链接文本
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE_点击单元格内链接 | 项目名称=216165-56546564&合约规划名称=合作款项 | 操作 | 查看详细
+    Return From Keyword If    '${linkColumnName}'==''
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${AppGridE_SelectedRowIndex}    _getRowIndex_AppGridE    ${locatorColumnNamesAndValues}
+    run keyword if    '${AppGridE_SelectedRowIndex}'=='-1'    fail    封装提示信息：未找到满足条件 "${locatorColumnNamesAndValues}" 的行，请检查参数是否正确。
+    ${tableLocation}    ${columnIndex}    _getColumnLocation_AppGridE    ${linkColumnName}
+    ${divId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    u'AppGridE_LeftDataDiv'    ELSE IF    '${tableLocation}' == 'Right'
+    ...    Evaluate    u'AppGridE_RightDataDiv'
+    click element    //div[@id='${divId}']/table[1]//tr[${AppGridE_SelectedRowIndex}+1]/td[${columnIndex}+1]//*[contains(text(),'${linkText}')]
+
+Map_AppGridE_点击单元格内图片
+    [Arguments]    ${locatorColumnNamesAndValues}    ${imgColumnName}    ${value}=1
+    [Documentation]    *功能：*
+    ...
+    ...    点击某一行中某一列的图片
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorColumnNamesAndValues : 用来定位行的列标头和对应的字段值,格式为column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    imgColumnName ：图片所在列名
+    ...
+    ...    value : 数据驱动参数，为空则不点击
+    ...
+    ...    *返回值说明：*
+    ...
+    ...    needNext：是否执行下一步
+    ...
+    ...    *示例：*
+    ...
+    ...    ${needNext} | Map_AppGridE_点击单元格内图片 | 项目名称=216165-56546564&合约规划名称=合作款项 | 图片
+    ${needNext}    run keyword if    '${value}'==''    Evaluate    0    ELSE    Evaluate
+    ...    1
+    Return From Keyword If    'value'==''    ${needNext}
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${AppGridE_SelectedRowIndex}    _getRowIndex_AppGridE    ${locatorColumnNamesAndValues}
+    run keyword if    '${AppGridE_SelectedRowIndex}'=='-1'    fail    封装提示信息：未找到满足条件 "${locatorColumnNamesAndValues}" 的行，请检查参数是否正确。
+    ${tableLocation}    ${columnIndex}    _getColumnLocation_AppGridE    ${imgColumnName}
+    ${divId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    u'AppGridE_LeftDataDiv'    ELSE IF    '${tableLocation}' == 'Right'
+    ...    Evaluate    u'AppGridE_RightDataDiv'
+    ${disabled}    Get Element Attribute    //div[@id='${divId}']/table[1]//tr[${AppGridE_SelectedRowIndex}+1]/td[${columnIndex}+1]//img@disabled
+    Run Keyword And Continue On Failure    run keyword if    '${disabled}'=='disabled' or '${disabled}'=='true'    fail    封装提示信息：行"${locatorColumnNamesAndValues}"，列"${imgColumnName}"内的图片禁用，无法点击
+    Return From Keyword If    '${disabled}'=='disabled' or '${disabled}'=='true'    0
+    click element    //div[@id='${divId}']/table[1]//tr[${AppGridE_SelectedRowIndex}+1]/td[${columnIndex}+1]//img
+    Return From Keyword    1
+    [Return]    ${needNext}
+
+Map_AppGridE_获取记录条数
+    [Documentation]    *功能：*
+    ...
+    ...    获取记录条数
+    ...
+    ...    *返回值：*
+    ...
+    ...    rowCount : 记录数
+    ...
+    ...    *示例：*
+    ...
+    ...    ${rowCount} | Map_AppGridE_获取记录条数
+    ${random}    Evaluate    random.randint(0,sys.maxint)    random,sys
+    Assign Id To Element    //div[@id='AppGridE_RightDataDiv']/table    rightDataTable${random}
+    ${rowCount}    _getTableRowCount    rightDataTable${random}
+    [Return]    ${rowCount}
+
+Map_AppGridE_检查单元格是否可以编辑
+    [Arguments]    ${locatorColumnNamesAndValues}    ${checkColumnName}
+    [Documentation]    *功能：*
+    ...
+    ...    检查单元格是否可以编辑
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorColumnNamesAndValues : 用来定位行的列标头和对应的字段值,格式为column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    checkColumnName ：需要检查的列名
+    ...
+    ...    *返回值：*
+    ...
+    ...    isEditable ： 1:可编辑 0：不可编辑
+    ...
+    ...    *示例：*
+    ...
+    ...    ${isEditable} | Map_AppGridE_检查单元格是否可以编辑 | 项目名称=216165-56546564&合约规划名称=合作款项 | 预估变更金额
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${random}    Evaluate    random.randint(0,sys.maxint)    random,sys
+    ${AppGridE_SelectedRowIndex}    _getRowIndex_AppGridE    ${locatorColumnNamesAndValues}
+    run keyword if    '${AppGridE_SelectedRowIndex}'=='-1'    fail    封装提示信息：未找到满足条件 "${locatorColumnNamesAndValues}" 的行，请检查参数是否正确。
+    ${tableLocation}    ${columnIndex}    _getColumnLocation_AppGridE    ${checkColumnName}
+    ${divId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    u'AppGridE_LeftDataDiv'    ELSE IF    '${tableLocation}' == 'Right'
+    ...    Evaluate    u'AppGridE_RightDataDiv'
+    Assign Id To Element    //div[@id='${divId}']/table[1]    table${random}
+    ${isEditable}    _checkTabelCellIsEditable    table${random}    ${AppGridE_SelectedRowIndex}    ${columnIndex}
+    [Return]    ${isEditable}
+
+_getRowIndex_AppGridE
+    [Arguments]    ${columnNamesAndValues}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    根据标头和对应的值获取改行行索引
+    ...
+    ...    *参数说明：*
+    ...
+    ...    columnNamesAndValues：列标头及对应的值
+    ...
+    ...    *返回值说明：*
+    ...
+    ...    AppGridE_SelectedRowIndex：满足条件行的行索引
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${columnNameList}    ${valueList}    _parseQueryStringToArray    ${columnNamesAndValues}
+    ${AppGridE_SelectedRowIndex}    _myExecuteJS    var columnNameList=${columnNameList};var valueList=${valueList};function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function isValueInArray(value,arr){for(var i=0;i<arr.length;i++){if(arr[i]==value)return true;}return false;};function getColumnLocation(columnName){var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv').getElementsByTagName('table')[0];var rowHeader=rightTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rp(rowHeader.cells[i].innerText)==rp(columnName)){return{'TableLocation':'Right','ColumnIndex':parseInt(i/2)};}}var tables=document.getElementById('AppGridE_LeftTitleDiv').getElementsByTagName('table');if(tables&&tables.length>0){var leftTitleTable=tables[0];rowHeader=leftTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rp(rowHeader.cells[i].innerText)==rp(columnName)){return{'TableLocation':'Left','ColumnIndex':parseInt(i/2)};}}}};function checkCellValueIsMatched(cell,columnValue){var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length){var input=inputs[0];if(rp(input.value)==rp(columnValue)){return true;}}var innerText=cell.innerText;if(innerText){return rp(innerText)==columnValue;}else{return columnValue=='';}return false;}function FindSatisfiedRows(columnLocation,columnValue){var satifiedRowIndexList=[];if(columnLocation.TableLocation=='Right'){var rightDataTable=document.getElementById('AppGridE_RightDataDiv').getElementsByTagName('table')[0];for(var i=0;i<rightDataTable.rows.length;i++){if(checkCellValueIsMatched(rightDataTable.rows[i].cells[columnLocation.ColumnIndex],columnValue)){satifiedRowIndexList.push(i);}}}else if(columnLocation.TableLocation=='Left'){var leftDataTable=document.getElementById('AppGridE_LeftDataDiv').getElementsByTagName('table')[0];for(var i=0;i<leftDataTable.rows.length;i++){if(checkCellValueIsMatched(leftDataTable.rows[i].cells[columnLocation.ColumnIndex],columnValue)){satifiedRowIndexList.push(i);}}}return satifiedRowIndexList;};function getArrayIntersection(arr1,arr2){if(arr1.length==0||arr2.length==0)return[];var result=[];for(var i=0;i<arr1.length;i++){if(isValueInArray(arr1[i],arr2)){result.push(arr1[i]);}}return result;};var columnLocation,satisfiedRows,rowIndexIntersection=[],rowIndex;for(var i=0;i<columnNameList.length;i++){columnLocation=getColumnLocation(columnNameList[i]);if(!columnLocation){return'0|||封装提示信息：列名"'+columnNameList[i]+'"不存在，请检查参数是否正确';}satisfiedRows=FindSatisfiedRows(columnLocation,valueList[i]);if(i==0){rowIndexIntersection=satisfiedRows;}else{rowIndexIntersection=getArrayIntersection(rowIndexIntersection,satisfiedRows);}}if(rowIndexIntersection.length>0){rowIndex=rowIndexIntersection[0];}else{rowIndex=-1;}return'1|||'+rowIndex;
+    [Return]    ${AppGridE_SelectedRowIndex}
+
+_getColumnLocation_AppGridE
+    [Arguments]    ${columnName}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    获取指定列的位置信息
+    ...
+    ...    *参数说明：*
+    ...
+    ...    columnName：目标列列头名称
+    ...
+    ...    *返回值说明：*
+    ...
+    ...    tableLocation：Left：固定部分；Right：可拖动部分
+    ...
+    ...    columnIndex：列索引
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${tableLoactionInfo}    _myExecuteJS    var debug=false;function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var columnName='${columnName}';function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;};function getColumnLocation(columnName){var rightTitleTable=window.document.getElementById('AppGridE_RightTitleDiv').getElementsByTagName('table')[0];var rowHeader=rightTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rp(rowHeader.cells[i].innerText)==columnName){return{'TableLocation':'Right','ColumnIndex':parseInt(i/2)};}}var tables=document.getElementById('AppGridE_LeftTitleDiv').getElementsByTagName('table');if(tables&&tables.length>0){var leftTitleTable=tables[0];rowHeader=leftTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rp(rowHeader.cells[i].innerText)==columnName){return{'TableLocation':'Left','ColumnIndex':parseInt(i/2)};}}}};var columnLocation=getColumnLocation(columnName);if(columnLocation){window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_ColumnLocation',columnLocation.TableLocation);window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_ColumnIndex',columnLocation.ColumnIndex);return'1|||'+formatObject(columnLocation);}else {return'0|||封装提示信息：列名"'+columnName+'"不存在，请检查参数是否正确';}
+    ${tableLocation}    Get Element Attribute    //html[1]@AppGridE_ColumnLocation
+    ${columnIndex}    Get Element Attribute    //html[1]@AppGridE_ColumnIndex
+    [Return]    ${tableLocation}    ${columnIndex}
+
+_setValue_AppGridE_Sel
+    [Arguments]    ${rowIndex}    ${columnIndex}    ${tableLocation}    ${value}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    AppGridE控件单元格内下拉框赋值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowIndex：行索引
+    ...
+    ...    columnIndex：列索引
+    ...
+    ...    tableLocation：坐在table的位置，固定部分或者可拖动部分
+    ...
+    ...    value：输入值
+    ${divId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    u'AppGridE_LeftDataDiv'    ELSE IF    '${tableLocation}' == 'Right'
+    ...    Evaluate    u'AppGridE_RightDataDiv'
+    注入PopupMockup脚本
+    ${disabled1}    Get Element Attribute    //div[@id='${divId}']/table[1]//tr[${rowIndex}+1]/td[${columnIndex}+1]//span[contains(@class,'AGE_Sel')]@disabled
+    ${disabled2}    Get Element Attribute    //div[@id='${divId}']/table[1]//tr[${rowIndex}+1]/td[${columnIndex}+1]//span[contains(@class,'AGE_Sel')]//img@disabled
+    Run Keyword And Continue On Failure    run keyword if    '${disabled1}'=='disabled' or '${disabled1}'=='true' or '${disabled2}'=='disabled' or '${disabled2}'=='true'    fail    封装提示信息：第${rowIndex}行，第${columnIndex}列下拉框无法编辑
+    Return From Keyword If    '${disabled1}'=='disabled' or '${disabled1}'=='true' or '${disabled2}'=='disabled' or '${disabled2}'=='true'
+    click element    //div[@id='${divId}']/table[1]//tr[${rowIndex}+1]/td[${columnIndex}+1]//span[contains(@class,'AGE_Sel')]//img
+    切入PopupMockup上下文
+    #检查选项是否存在
+    ${optionExist}    _myExecuteJS    var tds=window.document.getElementsByTagName('td');for(var i=0;i<tds.length;i++){if(tds[i].innerText=='${value}'){return'1|||1';}}return'1|||0';
+    Run Keyword And Continue On Failure    run keyword if    '${optionExist}'=='0'    fail    封装提示信息：第${rowIndex}行，第${columnIndex}列下拉框不存在选项"${value}"，请检查参数是否正确。
+    Return From Keyword If    '${optionExist}'=='0'
+    #解决下拉框中选项太多无法点击的问题,先隐藏无关选项，点击结束之后再恢复显示
+    Execute Javascript    var tds = window.document.getElementsByTagName('td');for(var i=0;i<tds.length;i++){if(tds[i].innerText != '${value}')tds[i].style.display='none';}
+    Comment    click element    //td[text()='${value}']
+    Click Element Via Js    //td[text()='${value}']
+    Execute Javascript    var tds = window.document.getElementsByTagName('td');for(var i=0;i<tds.length;i++){if(tds[i].innerText != '${value}')tds[i].style.display='';}
+    #恢复iframe上下文
+    Run Keyword And Ignore Error    返回上级Iframe
+
+_setValue_AppGridE_txt
+    [Arguments]    ${rowIndex}    ${columnIndex}    ${tableLocation}    ${value}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    AppGridE控件单元格内文本框赋值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowIndex：行索引
+    ...
+    ...    columnIndex：列索引
+    ...
+    ...    tableLocation：坐在table的位置，固定部分或者可拖动部分
+    ...
+    ...    value：输入值
+    ${divId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    u'AppGridE_LeftDataDiv'    ELSE IF    '${tableLocation}' == 'Right'
+    ...    Evaluate    u'AppGridE_RightDataDiv'
+    ${tableId}    Get Element Attribute    //div[@id='${divId}']/table@id
+    ${random}    Evaluate    random.randint(0,sys.maxint)    random,sys
+    run keyword if    '${tableId}' == '' or '${tableId}' == 'None'    Assign Id To Element    //div[@id='${divId}']/table    table${random}
+    ${tableId}    Get Element Attribute    //div[@id='${divId}']/table@id
+    ${isEditable}    _checkTabelCellIsEditable    ${tableId}    ${rowIndex}    ${columnIndex}
+    Run Keyword And Continue On Failure    run keyword if    '${isEditable}'=='0'    fail    封装提示信息：第${rowIndex}行，第${columnIndex}列无法编辑
+    Return From Keyword If    '${isEditable}'=='0'
+    Execute Javascript    var dataTable = document.getElementById('${divId}').getElementsByTagName('table')[0];var childInputs = dataTable.rows[${rowIndex}].cells[${columnIndex}].getElementsByTagName('input');if(childInputs && childInputs[0]){if (childInputs[0].style.display != "none"){childInputs[0].focus();childInputs[0].value='${value}';childInputs[0].blur();}}

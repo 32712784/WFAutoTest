@@ -1,0 +1,242 @@
+*** Settings ***
+Documentation     封装通用操作
+Library           Selenium2Library
+Resource          通用工具方法.txt
+Resource          通用参数配置.txt
+Library           AutoItLibrary
+Resource          通用封装(all_included).txt
+Library           OperatingSystem
+
+*** Variables ***
+
+*** Keywords ***
+定位页面
+    [Arguments]    ${PageName}
+    [Documentation]    *功能：*
+    ...
+    ...    打开每个页面时，必须先定位页面，即select window当前面面
+    ...
+    ...    *参数说明：*
+    ...
+    ...    PageName : 当前页面Title或url
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    定位页面 | title=新增合同
+    ...    定位页面 | url=%xxxx.aspx%
+    Wait Until Keyword Succeeds    10s    100ms    Select Window    ${PageName}
+
+上传文档
+    [Arguments]    ${filePath}
+    [Documentation]    *功能：*
+    ...
+    ...    上传文档
+    ...
+    ...    *参数说明：*
+    ...
+    ...    filePath : 文件全路径，路径分隔符用\\
+    ...
+    ...
+    ...    *注意：*
+    ...
+    ...    操作完毕之后，需自行切换窗口回原窗口
+    ...
+    ...    *示例：*
+    ...
+    ...    上传文档 | D:\\自动化测试专项文档\\自动化测试\\试点问题及总结\\10 自动化资料沉淀\\L4组件层.jpg
+    定位页面    title=上传文档
+    select frame    ctl_iframe_show
+    choose file    GetFile    ${filePath}
+    click button    btnOk
+
+注入PopupMockup脚本
+    [Documentation]    *功能：*
+    ...
+    ...    注入Popup模拟脚本，通过一个浮动的DIV + 一个Iframe代替原有的Popup功能
+    ${PopupMockupScriptHasBeenInjected}    Get Element Attribute    //html[1]@PopupMockupScriptHasBeenInjected
+    run keyword if    '${EnablePopupMockup}' == 'Yes' and '${PopupMockupScriptHasBeenInjected}' != 'Yes'    Execute Javascript    window.document.getElementsByTagName('html')[0].setAttribute('PopupMockupScriptHasBeenInjected','Yes');function MyPopup(customId) {var popupDiv, popupIframe;var pupupId = "_"+(customId||"MyPopup");var popupDivId = "_windowPopupDiv"+pupupId;var popupIframeId = "_windowPopupIframe_"+(new Date()).getTime();var popupHideIframeDivId= "_windowPopupHideIframeDivId";var popupHideIframeDiv;var popupInit = function() {popupDiv = window.document.getElementById(popupDivId);popupHideIframeDiv = window.document.getElementById(popupHideIframeDivId);if (!popupDiv) {popupDiv = window.document.createElement("div");popupDiv.setAttribute("id", popupDivId);setElementStyles(popupDiv, {position: "absolute",border: "0px",margin: "0px",padding: "0px",zIndex: 999,display: "none",overflow: "hidden"});window.document.body.appendChild(popupDiv);}if (!popupHideIframeDiv) {popupHideIframeDiv = window.document.createElement("div");popupHideIframeDiv.setAttribute("id", popupHideIframeDivId);setElementStyles(popupHideIframeDiv, {position: "absolute",border: "0px",margin: "0px",padding: "0px",display: "none"});window.document.body.appendChild(popupHideIframeDiv);}popupIframe = window.document.createElement("iframe");popupIframe.setAttribute("id", popupIframeId);popupIframe.setAttribute("name", popupIframeId);setElementStyles(popupIframe, {backgroundColor: "#FFFFFF",margin: "0px",padding: "0px",border: "0px"});popupHideIframeDiv.appendChild(popupIframe);popupIframe.src = "about:blank";var ifr = window.frames[popupIframeId]; ifr.document.open();ifr.document.write('<html><head><title></title><style type="text/css">html,body {padding: 0;margin: 0;border:0px;}body{overflow: hidden}</style><script type="text/javascript">window.createPopup = function(customId) {return parent.createPopup(customId);};</script></head><body></body></html>');ifr.document.close();};var setElementStyles = function(element, styleDict) {var style = element.style;for (var styleName in styleDict) style[styleName] = styleDict[styleName];};popupInit();var self = this;var popupIsOpen = false;this.getIsOpen = function () {return popupIsOpen;};this.getDocument = function () {return this.document;};var doc = (popupIframe.contentWindow || popupIframe.contentDocument);if (doc.document) doc = doc.document;this.document = doc;function pxToNumber(px) {if (!px)return 0;if (typeof(px) == "number")return px;return parseInt(px.replace("px", ""), 10);}function \ popupAdd( ) {if (typeof(window.MyPopups) == "undefined") {window.MyPopups = new Object();}window.MyPopups[pupupId] = self;}function \ popupRemove( ) {if (typeof(window.MyPopups) == "undefined") {return;}window.MyPopups[pupupId] =undefined;}var triggerElement;if (!window.PopupNumber) {window.PopupNumber = 0;}var popupNumber = ++window.PopupNumber;this.show = function (iX, iY, iWidth, iHeight, oElement) {triggerElement = window.event ? window.event.srcElement : undefined;while (popupDiv.firstChild) {popupHideIframeDiv.appendChild(popupDiv.firstChild);}popupDiv.appendChild(popupIframe);var clearDivId="_windowPopupIrameClearDiv";var clearDiv = self.document.getElementById(clearDivId);if (!clearDiv) {clearDiv = self.document.createElement("div");clearDiv.setAttribute("id", clearDivId);setElementStyles(clearDiv, {clear: "both",textAlign:"center",backgroundColor:"Gray",height:"0px",lineHeight:"0px"});self.document.body.appendChild(clearDiv);}popupDiv.style.display = "block";var divWidth = self.document.body.offsetWidth.toString();var divHeight = self.document.body.offsetHeight.toString();divWidth = pxToNumber(iWidth);divHeight = pxToNumber(iHeight);popupDiv.style.width = divWidth;popupDiv.style.height = \ (divHeight)+"px";popupIframe.style.width = divWidth;popupIframe.style.height = (divHeight)+"px";if (!oElement){oElement = window.document.body;}if (oElement != oElement.document.body){var coordinates = oElement.getBoundingClientRect();iX += coordinates.left;iY += coordinates.top;}var oElementWin = oElement.document.parentWindow;if (oElementWin != window) {coordinates = oElementWin.frameElement.getBoundingClientRect();iX += coordinates.left;iY += coordinates.top;oElementWin = oElementWin.parent;}popupDiv.style.left = iX + "px";popupDiv.style.top = iY + "px";popupIsOpen = true;self.isOpen = true;popupAdd();};this.hide = function(){if (triggerElement && window.event && triggerElement == window.event.srcElement)return;var element = window.event ? window.event.srcElement : null;if (element && element.document != window.document){return;}while (popupDiv.firstChild){popupHideIframeDiv.appendChild(popupDiv.firstChild);}if (popupIsOpen){setElementStyles(popupDiv, {display: "none",width: 0,heigth: 0});self.isOpen = false;popupIsOpen = false;}triggerElement = undefined;popupRemove();};this.isOpen = false;}window.createPopup = function(customId){return new MyPopup(customId);};window.hideMyPopup = function(){if(window.MyPopups){for(var popupId in window.MyPopups){var myPopup = window.MyPopups[popupId];if (myPopup && myPopup.getIsOpen() && typeof (myPopup.hide)=="function"){myPopup.hide();}}}};window.document.onmousedown = function(){var findChildWindows = function(currentWin){var array = new Array();if(currentWin && currentWin.hideMyPopup)array.push(currentWin);if (currentWin && currentWin.frames && currentWin.frames.length > 0){var frms = currentWin.frames;for (var i = 0; i < frms.length; i++){var frm = frms[i];var win = frm.document && frm.document.parentWindow ? frm.document.parentWindow : null;if (win){var childWins = findChildWindows(win);if (childWins && childWins.length > 0) {for (var childIndex in childWins){array.push(childWins[childIndex]);}}}}}return array;};var topWin = window.top || window;var windows = findChildWindows(topWin);for (var index in windows){var win = windows[index];if (win && win.hideMyPopup && typeof(win.hideMyPopup) == "function"){win.hideMyPopup();}}};
+
+切入PopupMockup上下文
+    [Documentation]    *功能：*
+    ...
+    ...    进入Popup替代容器对应的Iframe
+    Wait Until Page Contains Element    //div[@id='_windowPopupDiv_MyPopup']
+    sleep    500ms
+    Execute Javascript    var popupDiv=window.document.getElementById('_windowPopupDiv_MyPopup');var iframe=popupDiv.firstChild;popupDiv.setAttribute('iframeId',iframe.id);
+    ${iframeId}    Get Element Attribute    //div[@id='_windowPopupDiv_MyPopup']@iframeId
+    select frame    ${iframeId}
+
+返回上级Iframe
+    [Documentation]    *功能：*
+    ...
+    ...    返回当前Iframe的父级Iframe
+    ${parentIframePath}    Execute Javascript    var currentWin=parent;var parentPathArr=[];var parentPathStr='';while(currentWin&&currentWin!=top){parentPathArr.push(currentWin.frameElement.id||currentWin.frameElement.name);currentWin=currentWin.parent;}var temp;while(temp=parentPathArr.pop()){parentPathStr+=temp+'/';}if(parentPathStr!=''){parentPathStr=parentPathStr.substr(0,parentPathStr.length-1);}return parentPathStr;
+    unselect frame
+    run keyword if    '${parentIframePath}' != ''    select frame    ${parentIframePath}
+
+点击主菜单项
+    [Arguments]    ${menuPath}    ${runJsBy}=0
+    [Documentation]    *功能：*
+    ...
+    ...    点击主菜单项
+    ...
+    ...    *参数说明：*
+    ...
+    ...    menuPath : 用"/"分割的菜单命令
+    ...
+    ...    *示例：*
+    ...
+    ...    点击主菜单项 | 工具/切换公司
+    ${menuArr}    evaluate    u'${menuPath}'.split('/')
+    ${action}    run keyword if    '${menuArr[0]}'=='文件'    Get Element Attribute    //span[@accessKey='F']/table//td[contains(text(),'${menuArr[1]}')]/parent::tr@action    ELSE IF    '${menuArr[0]}'=='工具'
+    ...    Get Element Attribute    //span[@accessKey='T']/table//td[contains(text(),'${menuArr[1]}')]/parent::tr@action
+    run keyword if    '${runJsBy}'=='0'    Execute Javascript    function f1(){${action}};setTimeout(f1,1000);
+    run keyword if    '${runJsBy}'=='1'    _runJSViaClickButton    ${action}
+
+数据库还原
+    [Documentation]    *功能：*
+    ...
+    ...    用于在case执行完成后，恢复数据库
+    ...
+    ...    *参数说明：*
+    ...
+    ...    SqlInstance：数据库实例名
+    ...
+    ...    DB：数据库名
+    ...
+    ...    User：连接数据库的用户名，请使用sa
+    ...
+    ...    PassWord：用户密码
+    ...
+    ...    snapshootName：备份好的数据库快照名称
+    ...
+    ...    *实例：*
+    ...
+    ...    ${SqlInstance} =10.5.106.162\\sql2008r2
+    ...
+    ...    ${DB}=dotnet_erp30
+    ...
+    ...    ${User}=sa
+    ...
+    ...    ${PassWord}=95938
+    ...
+    ...    ${snapshootName}='dotnet_erp303SP2_snapshot318'
+    OperatingSystem.run    'taskkill /F /IM w3wp.exe'
+    Connect To Database Using Custom Params    adodbapi    "Provider=MSDASQL;Driver={SQL Server};Server=${DBrestore[0]};Database=${DBrestore[1]};UID=${DBrestore[2]} ;PWD=${DBrestore[3]};"
+    ${DB}    Evaluate    '[' +'${DBrestore[1]}' + ']'
+    Execute Sql String    USE master;ALTER DATABASE ${DBrestore[1]} SET SINGLE_USER WITH ROLLBACK IMMEDIATE;RESTORE DATABASE ${DBrestore[1]} FROM DATABASE_SNAPSHOT = '${DBrestore[4]}' ;ALTER DATABASE ${DBrestore[1]} SET MULTI_USER WITH ROLLBACK IMMEDIATE;
+    Disconnect From Database
+
+第一次登录系统
+    [Timeout]    5 minutes
+    #早期ERP版本不知为何还原数据库之后，第一次自动化访问站点时报错，第二次就好了。所有这里默认先访问一次站点
+    open browser    ${url}    ie
+    Close All Browsers
+    open browser    ${url}    ie
+    Page Should Contain Element    txtUserCode    登录页面没有登录框，可能是系统错误或者狗需要充值
+    [Teardown]    安全退出
+
+批量执行关键字
+    [Arguments]    ${paramData}    ${keywordToBeRun}    @{paramNameList}
+    [Documentation]    *功能：*
+    ...
+    ...    批量执行关键字
+    ...
+    ...    *参数说明：*
+    ...
+    ...    paramData : 参数名称列表和对应的值，是一个二维数组，数组的第一个元素是参数名称集合,其他元素为参数值。格式如下：
+    ...
+    ...    [['paramA','paramB','paramC','paramD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    keywordToBeRun：需要执行的关键字名称。格式为 keyword=关键字名称
+    ...
+    ...    paramNameList：参数名称列表，引用外部数组请用LIST_打头，要传递当前循环的I，请使用LIST_i
+    ...
+    ...    *示例：*
+    ...
+    ...    ${paramData} | Evaluate | [[u'paramA',u'paramB',u'paramC',u'paramD'],[u'工程合同款',u'进度款',1234,u'2014-09-28'],[u'工程合同款',u'进度款',1234,u'2014-09-28']]
+    ...
+    ...    批量执行关键字 | ${paramData} | keyword=我的关键字 | paramA | paramB | LIST_paramC | LIST_i
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${paramData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${paramTitleArr}    Evaluate    ${paramData}[0]
+    ${dataLen}    Evaluate    len(${paramData})
+    ${keywordName}    Evaluate    u'${keywordToBeRun}'.replace('keyword=','')
+    : FOR    ${i}    IN RANGE    1    ${dataLen}
+    \    @{args}    _buildBatchExecuteParamArray    ${paramTitleArr}    ${paramNameList}    ${paramData}[${i}]    ${i}
+    \    run keyword    ${keywordName}    @{args}
+
+切换页面横标签
+    [Arguments]    ${tagName}
+    [Documentation]    *功能：*
+    ...
+    ...    切换页面横标签
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tagName: 横标签文本
+    ...
+    ...    *示例：*
+    ...
+    ...    切换页面横标签 | 费用科目
+    click element    //td[@id='tabs']/span[normalize-space(text())='${tagName}']
+
+_buildBatchExecuteParamArray
+    [Arguments]    ${paramTitleArr}    ${paramNameArr}    ${paramDataRow}    ${i}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    构造关键字调用参数数组
+    ...
+    ...    *参数说明：*
+    ...
+    ...    paramTitleArr：参数标题数组
+    ...
+    ...    paramNameArr：参数名称数组
+    ...
+    ...    paramDataRow：参数值数据行
+    ...
+    ...    i：正在处理的行号
+    ...
+    ...    *返回值：*
+    ...
+    ...    result：构建好的参数数组
+    ${paramNameArrLen}    Evaluate    len(${paramNameArr})
+    ${result}    Evaluate    []
+    : FOR    ${j}    IN RANGE    0    ${paramNameArrLen}
+    \    ${paramName}    Evaluate    ${paramNameArr}[${j}]
+    \    ${findList}    Evaluate    u'${paramName}'.find('LIST_')
+    \    ${paramName}    run keyword if    '${findList}'!='-1'    Evaluate    u'${paramName}'.replace(u'LIST_','')    ELSE
+    \    ...    Evaluate    u'${paramName}'
+    \    ${list_NonI_ParamName}    run keyword if    '${findList}'!='-1' and '${paramName}' != 'i' and '${paramName}' != 'I'    Evaluate    '$' + '{' + '${paramName}' + '}'
+    \    ${paramIndex}    run keyword if    '${findList}'=='-1'    Evaluate    ${paramTitleArr}.index(u'${paramName}')
+    \    ${paramValue}    run keyword if    '${findList}'=='-1'    Evaluate    [${paramDataRow}[${paramIndex}]]    ELSE IF
+    \    ...    '${paramName}' != 'i' and '${paramName}' != 'I'    Get Variable Value    ${list_NonI_ParamName}    ELSE    Evaluate
+    \    ...    [${i}]
+    \    ${paramValue}    run keyword if    '${findList}'!='-1' and '${paramName}' != 'i' and '${paramName}' != 'I'    Evaluate    [${paramValue}]    ELSE
+    \    ...    Evaluate    list(${paramValue})
+    \    ${result}    Evaluate    ${result}+${paramValue}
+    [Return]    ${result}
+
+_ModuleNavClickLastMenu
+    [Arguments]    ${lastMenuText}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    模块导航点击最后一个菜单，由于可能存在相同的末级菜单，需要通过隐藏或显示点击正确的菜单
+    ...
+    ...    *参数说明：*
+    ...
+    ...    lastMenuText ：末级菜单文本
+    ${runMsg}    Run Keyword And Ignore Error    click element    //tr[@id='trBar']//td[text()='${lastMenuText}']
+    ${runStatus}    Evaluate    ${runMsg}[0]
+    run keyword if    '${runStatus}'=='FAIL'    click element    xpath=(//tr[@id='trBar']//td[text()='${lastMenuText}'])[2]
+
+安全退出
+    OperatingSystem.Run    ${CURDIR}\\Kill.bat
+
+安全进入
+    OperatingSystem.Run    ${CURDIR}\\Kill.bat

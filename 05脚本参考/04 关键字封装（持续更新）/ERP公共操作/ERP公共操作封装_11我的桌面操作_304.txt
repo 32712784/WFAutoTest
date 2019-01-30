@@ -1,0 +1,52 @@
+*** Settings ***
+Resource          ../../关键字封装/资源文件/通用封装(all_included).txt
+Library           Selenium2Library
+
+*** Keywords ***
+通过桌面打开待办消息_304
+    [Arguments]    ${ProcessName}
+    定位页面    title=明源地产ERP
+    select frame    stage1
+    click element    btnShowWebpart
+    Assign Id To Element    //iframe[contains(@src,'/WebPart/Wake/Desk_MyPendingWork.aspx')]    tempIframe123
+    select frame    tempIframe123
+    click link    //a[text()='待办事项']
+    Unselect Frame
+    选择待办消息_304    ${ProcessName}
+
+选择待办消息_304
+    [Arguments]    ${ProcessName}
+    定位页面    title=明源地产ERP
+    select frame    stage1/ifrmWake
+    Map_AppFind_普通查找    主题    ${ProcessName}
+    select frame    appGrid
+    Map_AppGrid_双击行    模式=待办
+    unselect frame
+
+桌面部件打开待办消息_变通处理
+    [Arguments]    ${FindText}
+    切换至旧待办事宜
+    进入并打开待办消息    ${FindText}
+
+切换至旧待办事宜
+    定位页面    title=明源地产ERP
+    select frame    menu1
+    点击主菜单项    工具/定制我的桌面
+    unselect frame
+    定位页面    title=明源地产ERP
+    select frame    stage1
+    click element    xpath=//button[text()='取 消']
+    unselect frame
+
+进入并打开待办消息
+    [Arguments]    ${FindText}
+    #点击待办事项链接
+    Wait Until Keyword Succeeds    10s    500ms    Select Window    title=明源地产ERP
+    Select Frame    stage1
+    Assign Id To Element    //iframe[@src='/WebPart/Wake/Desk_MyPendingWork.aspx']    myTempFrameId
+    select frame    myTempFrameId
+    click element    xpath=//a[text()="待办事项"]
+    unselect frame
+    定位页面    title=明源地产ERP
+    普通查询    stage1/ifrmWake    主题    ${FindText}
+    双击列表记录    stage1/ifrmWake/appGrid    序号=1

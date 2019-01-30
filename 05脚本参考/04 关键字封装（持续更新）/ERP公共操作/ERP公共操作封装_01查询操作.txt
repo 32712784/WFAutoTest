@@ -1,0 +1,51 @@
+*** Settings ***
+Resource          ../../关键字封装/资源文件/通用封装(all_included).txt
+Library           Selenium2Library
+
+*** Keywords ***
+选择组织机构
+    [Arguments]    ${FrameName}    ${BUName}
+    [Documentation]    一级界面有多种情况，每种情况下所要进的Frame不一致，所以将Frame作为参数传递，如：
+    ...    1、常用界面：如成本管理的设计变更模块，Frame为stage1
+    ...    2、带上标签的一级界面：如成本管理的合同变更模块，Frame为 stage1/ifrmHtAlter
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    select Frame    ${FrameName}
+    Map_DeptDDTree_设置组织机构    ${BUName}
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    Unselect Frame
+
+下拉选择项目
+    [Arguments]    ${FrameName}    ${ProjName}
+    [Documentation]    一级界面有多种情况，每种情况下所要进的Frame不一致，所以将Frame作为参数传递，如：
+    ...    1、常用界面：如成本管理的设计变更模块，Frame为stage1
+    ...    2、带上标签的一级界面：如成本管理的合同变更模块，Frame为 stage1/ifrmHtAlter
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    select Frame    ${FrameName}
+    Map_ProjectDropDownTree_选择项目    ${ProjName}
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    Unselect Frame
+
+选择视图
+    [Arguments]    ${FrameName}    ${viewname}
+    [Documentation]    一级界面有多种情况，每种情况下所要进的Frame不一致，所以将Frame作为参数传递，如：
+    ...    1、常用界面：如成本管理的设计变更模块，Frame为stage1
+    ...    2、带上标签的一级界面：如成本管理的合同变更模块，Frame为 stage1/ifrmHtAlter
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    select Frame    ${FrameName}
+    Select From List By Label    appViewList    ${viewname}
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    Unselect Frame
+
+普通查询
+    [Arguments]    ${FrameName}    ${Findname}    ${Findtext}    ${isQueryInView}=No
+    [Documentation]    一级界面有多种情况，每种情况下所要进的Frame不一致，所以将Frame作为参数传递，如：
+    ...    1、常用界面：如成本管理的设计变更模块，Frame为stage1
+    ...    2、带上标签的一级界面：如成本管理的合同变更模块，Frame为 stage1/ifrmHtAlter
+    ...
+    ...    3、如果需要选择“视图内查询”，并且默认是不勾选的，需要将${isQueryInView}参数传入值为Yes
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    select Frame    ${FrameName}
+    Map_AppFind_普通查找    ${Findname}    ${Findtext}    ${isQueryInView}
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    Unselect Frame
+
+高级查询
+    [Arguments]    ${FrameName}    ${conditions}    ${isQueryInView}=No
+    [Documentation]    一级界面有多种情况，每种情况下所要进的Frame不一致，所以将Frame作为参数传递，如：
+    ...    1、常用界面：如成本管理的设计变更模块，Frame为stage1
+    ...    2、带上标签的一级界面：如成本管理的合同变更模块，Frame为 stage1/ifrmHtAlter
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    select Frame    ${FrameName}
+    Map_AppFind_高级查找    ${conditions}    ${isQueryInView}
+    Run Keyword If    '${FrameName}'!='${EMPTY}'    Unselect Frame

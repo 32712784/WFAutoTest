@@ -1,0 +1,34 @@
+*** Settings ***
+Library           Selenium2Library
+Library           AutoItLibrary
+
+*** Test Cases ***
+Return From Keyword(退出关键字)
+    ${I}    Set Variable    eee/rr/rr
+    log    ${I}
+    ${I}    Evaluate    '${I}'.split('/')
+    log    ${I}
+    退出测试    ${EMPTY}
+    退出测试    ${I}
+
+判断元素是否可编辑
+    登录
+    \    Element Should Be Disabled    xpath=//input[@name='HtClass']
+    \    Element Should Be Enabled    xpath=//input[@name='ContractName']
+
+导入PY文件
+    Import Variables    ${CURDIR}\\var.py
+
+执行关键字
+    #执行关键字
+    Run Keyword    关键字名称（关键字名称可以是变量）    关键字参数
+    #执行指定的关键字times次
+    Repeat Keyword    5 times    关键字名称（关键字名称可以是变量）    关键字参数
+    #根据参数args执行关键字name，错误时依旧继续执行
+    Run Keyword And Continue On Failure
+
+*** Keywords ***
+退出测试
+    [Arguments]    ${a}
+    Run Keyword If    '${a}'==''    Return From Keyword
+    log    退出与否

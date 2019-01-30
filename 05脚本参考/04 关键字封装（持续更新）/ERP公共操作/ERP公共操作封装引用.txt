@@ -1,0 +1,13 @@
+*** Settings ***
+Documentation     引用所有资源文件，测试套无需引用所有资源文件，只需要引用本文件即可
+Resource          ERP公共操作封装_01查询操作.txt
+Resource          ERP公共操作封装_02列表操作按钮.txt
+Resource          ERP公共操作封装_03表单操作按钮.txt
+Resource          ERP公共操作封装_04appgrid常用操作.txt
+Resource          ERP公共操作封装_11我的桌面操作.txt
+Resource          ERP公共操作封装_12线下审批.txt
+Resource          ERP公共操作封装_13业务参数配置.txt
+Resource          ERP公共操作封装_14上传下载文档.txt
+Resource          ERP公共操作封装_15导入excel.txt
+Resource          ERP公共操作封装_11我的桌面操作_304.txt
+Resource          ERP公共操作封装_00登录及模块导航.txt

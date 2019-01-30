@@ -1,0 +1,19 @@
+*** Settings ***
+Resource          ../内置库引用.txt
+
+*** Test Cases ***
+获取元素属性值
+    #获取对象某个元素的Value值
+    ${value}    Get Value    //input[@name='${fieldName}']
+    #获取对象某个元素的text值
+    ${value}    Get text    //input[@name='${fieldName}']
+    #获取对象某个元素的指定的属性值
+    ${id}    Get Element Attribute    //input[@name='${fieldName}' and @value='${value}']@id
+
+判断对象是否可见
+    #判断待操作的部件在我的桌面是否显示（我的桌面中是否有定义）
+    Select Frame    stage1
+    ${local_WebPartIsVisible}=    Run Keyword And Return Status    Element Should Be Visible    xpath=//td[contains(text(), '${WebParttitle}')]
+    #Fail后继续执行
+    Run Keyword And Continue On Failure    run keyword if    '${local_WebPartIsVisible}'=='False'    fail    "我的桌面中未设置该部件"
+    Return From Keyword If    '${local_WebPartIsVisible}'=='False'

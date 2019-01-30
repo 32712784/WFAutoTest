@@ -1,0 +1,64 @@
+*** Test Cases ***
+字符串拼接和分割
+    #字符串拼接（数组拼接为字符串）
+    @{LISTA}    Create List    1    2    3    4
+    ${StringList}    Evaluate    '/'.join(@{LISTA})
+    log    ${StringList}    #1/2/3/4
+    #字符串分割为数组
+    ${String}    Set Variable    项目名称=不控制项目一期
+    @{LISTA}    Evaluate    u'${String}'.split('=')
+    log    ${LISTA[0]},${LISTA[1]}    #项目名称,不控制项目一期
+
+将数组值串接为字符串
+    #获得合约规划预期返回值，合约规划列表是一个数组明细，但合约规划的说明信息是将明细记录用;间隔拼接的字符串，因此需要处理数组
+    ${local_rowno}    Set Variable If    '${pagetype}'=='新增修改合同变更'    5    '${pagetype}'=='补录未完工确认'    6    '${pagetype}'=='补录已完工确认'
+    ...    7    '${pagetype}'=='完工确认'    7    '${pagetype}'=='完工确认审核'    8
+    LOG    ${local_rowno}
+    ${local_rownum}    Evaluate    len(${SelectBudget})    #获得数组参数的个数
+    ${UseCostInfo}    Set Variable    ${SelectBudget[0][0]}-${SelectBudget[0][1]}(${SelectBudget[0][${local_rowno}]}元)    #因为最后一个数组串接后面没有分隔符，所以先处理第0行记录，后面再循环处理第1~N行记录
+    : FOR    ${local_I}    IN RANGE    1    ${local_rownum}    1
+    \    ${UseCostInfo}    Set Variable    ${UseCostInfo};${SelectBudget[${local_i}][0]}-${SelectBudget[${local_i}][1]}(${SelectBudget[${local_i}][${local_rowno}]}元)    #有多行记录时，用;间隔
+    #如果合约规划为空，则赋合约规划返回值为空值
+    ${UseCostInfo}=    Set Variable If    '${SelectBudget[0][1]}'=='${EMPTY}'    ${EMPTY}    ${UseCostInfo}
+    #验证合约规划返回值
+    ${local_actualValue}    get value    name=UseCostInfo    #获得实际值
+    Run Keyword And Continue On Failure    run keyword if    '${local_actualValue}' != '${UseCostInfo}'    fail    合约规划返回值失败！期望值：${UseCostInfo}，实际值：${local_actualValue}
+    LOG    ${UseCostInfo}
+    Set Test Variable    ${UseCostInfo}
+
+字符串拼接
+    @{a}    Set Variable    a    b    c    d
+    ${x}    Set Variable    ${a[0]}
+    log    ${a},${x}
+    ${local_rownum}    Evaluate    len(${a})
+    : FOR    ${local_I}    IN RANGE    1    ${local_rownum}
+    \    ${x}    Set Variable    ${x},${a[${local_I}]}    #用逗号串联形成字符串
+    \    log    ${x}
+
+数值与字符串间联结运算
+    ${Str}    Set Variable    字符串
+    ${Num}    Set Variable    5
+    ${StrandNum}    Set Variable    ${Str}${Num}
+    ${StrandNum}    Evaluate    ${Num}+1
+    Comment    ${StrandNum}    Evaluate    ${Str}+${Num}    #字符串与数值拼接时，不能使用+号，直接接接即可，否则会报语法错误
+    log    ${StrandNum}
+
+将字符串分割为数组
+    ${FeeList}    Evaluate    u'2013-06-10&定金,2013-06-20&首期'
+    log    ${FeeList}    #2013-06-10&定金,2013-06-20&首期
+    ${FeeListArr}    Evaluate    u'${FeeList}'.split(',')    #按;分隔字符串为1个一维数组[u'2013-06-10&\u5b9a\u91d1', u'2013-06-20&\u9996\u671f']
+    ${FeeListArrLen}    Evaluate    len(${FeeListArr})    #获取数组行数，对每一个数组进行处理
+    : FOR    ${i}    IN RANGE    len(${FeeListArr})
+    \    ${FeeListArr2}    Evaluate    u'${FeeListArr[${i}]}'.split('&')    #按&连接符分割为数组
+    \    LOG    ${FeeListArr2}
+
+Catenate连接指定参数
+    #连接参数，默认用空格连接
+    ${string}    Catenate    hello    world
+    log    ${string}    #hello world
+    #连接参数，用-连接
+    ${string}    Catenate    SEPARATOR=-    hello    world
+    log    ${string}    #hello-world
+    #连接参数,不使用间隔符
+    ${string}    Catenate    SEPARATOR=    hello    world
+    log    ${string}    #helloworld

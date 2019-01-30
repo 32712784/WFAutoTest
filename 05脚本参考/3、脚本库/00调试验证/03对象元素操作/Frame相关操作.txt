@@ -1,0 +1,16 @@
+*** Settings ***
+Library           Selenium2Library
+
+*** Test Cases ***
+切入和退出Frame
+    select Frame    appIframeHYGH/AppGridE1
+    unselect frame
+
+为没有ID的Frame赋ID
+    #点击待办事项链接
+    Wait Until Keyword Succeeds    10s    500ms    Select Window    title=明源地产ERP
+    Select Frame    stage1
+    Assign Id To Element    //iframe[@src='/WebPart/Wake/Desk_MyPendingWork.aspx']    myTempFrameId
+    select frame    myTempFrameId
+    click element    xpath=//a[text()="待办事项"]
+    unselect frame

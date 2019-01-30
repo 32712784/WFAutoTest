@@ -1,0 +1,52 @@
+*** Settings ***
+Resource          ../内置库引用.txt
+
+*** Test Cases ***
+shoud contain
+    open browser    http://www.baidu.com    chrome
+    input text    kw    明源软件
+    Click Button    su
+    sleep    2s
+    ${title}    Get Title
+    log    ${title}    #明源软件_百度搜索
+    #参数1包含参数2时，则为True，否则会Fail
+    Should Contain    ${title}    明源软件
+    Close All Browsers
+
+should be equal
+    open browser    http://www.baidu.com    chrome
+    input text    kw    明源软件
+    Click Button    su
+    sleep    2s
+    ${title}    Get Title
+    log    ${title}    #明源软件_百度搜索
+    #对象相等时，则为True，否则会Fail
+    Should Be Equal    ${title}    明源软件    #FAIL : 明源软件_百度搜索 != 明源软件
+    Close All Browsers
+
+should not be equal
+    open browser    http://www.baidu.com    chrome
+    input text    kw    明源软件
+    Click Button    su
+    sleep    2s
+    ${title}    Get Title
+    log    ${title}    #明源软件_百度搜索
+    #对象不相等时，则为True，否则会Fail
+    Should Not Be Equal    ${title}    明源软件    #FAIL : 明源软件_百度搜索 != 明源软件
+    Close All Browsers
+
+should be true
+    #条件为真时，TRUE，否则FAIL
+    ${rc}    Set Variable    12
+    Run Keyword And Continue On Failure    Should Be True    ${rc} < 10
+    Run Keyword And Continue On Failure    Should Be True    ${rc} > 10    # Strings must be quoted
+    ${number}    Set Variable    0
+    Run Keyword And Continue On Failure    Should Be True    ${number}    # Passes if ${number} is not zero
+    @{list}    Set Variable    A    B
+    Run Keyword And Continue On Failure    Should Be True    ${list}    # Passes if ${list} is not empty
+
+校验关键字
+    #should be true
+    ${a}    Get Element Attribute    xpath=//input[@name='HtClass']@value
+    should be true    '${a}'=='已定合同'    校验失败：预期值为'已定合同'，实际值为'${a}'!    #当比较不一致时，才会打出后面的log
+    #isEditable

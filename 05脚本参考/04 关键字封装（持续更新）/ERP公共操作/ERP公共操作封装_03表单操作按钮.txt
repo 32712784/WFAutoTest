@@ -1,0 +1,80 @@
+*** Settings ***
+Resource          ../../关键字封装/资源文件/通用封装(all_included).txt
+Library           Selenium2Library
+
+*** Keywords ***
+点击保存
+    [Arguments]    ${AppFromFrameName}=${EMPTY}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    保存
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+
+点击保存新增
+    [Arguments]    ${AppFromFrameName}=${EMPTY}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    保存&新增
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+
+点击保存关闭
+    [Arguments]    ${AppFromFrameName}=${EMPTY}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    保存&关闭
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+
+点击关闭
+    [Arguments]    ${AppFromFrameName}=${EMPTY}
+    Comment    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Comment    Map_AppForm_点击命令按钮    关闭
+    Comment    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+    close window
+
+点击发起审批
+    [Arguments]    ${MenuName}=发起审批    ${AppFromFrameName}=${EMPTY}
+    [Documentation]    ${MenuName}:业务数据页面点击发起审批按钮时的按钮名称，有两种情况
+    ...    \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 如果直接是发起审批，该参数就不用传值，因为有默认值
+    ...    \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ 如果是审批/发起审批，需要传参数值为：审批/发起审批
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    ${MenuName}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+
+点击审批过程
+    [Arguments]    ${AppFromFrameName}=${EMPTY}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    审批过程
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+
+点击提交审批
+    [Arguments]    ${AppFromFrameName}=${EMPTY}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    提交审批
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+
+点击审批驳回
+    [Arguments]    ${AppFromFrameName}=${EMPTY}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    审批驳回
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+
+点击审批通过
+    [Arguments]    ${AppFromFrameName}=${EMPTY}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    审批通过
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame
+
+点击按钮
+    [Arguments]    ${menuPath}    ${AppFromFrameName}=${EMPTY}
+    [Documentation]    *功能：*
+    ...
+    ...    点击表单页面的按钮
+    ...
+    ...    *参数说明：*
+    ...
+    ...    FrameName：列表操作按钮要进入的Frame
+    ...    menuPath: 菜单路径，父菜单与子菜单之间用"/"分割
+    ...
+    ...    *示例：*
+    ...
+    ...    1. 独立菜单场景 ：列表点击按钮 | stage1/appIframe | \ 其它/生成预收款
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    select Frame    ${AppFromFrameName}
+    Map_AppForm_点击命令按钮    ${menuPath}
+    Run Keyword If    '${AppFromFrameName}'!='${EMPTY}'    Unselect Frame

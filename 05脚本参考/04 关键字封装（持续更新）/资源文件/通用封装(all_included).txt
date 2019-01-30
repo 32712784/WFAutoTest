@@ -1,0 +1,25 @@
+*** Settings ***
+Documentation     引用所有资源文件，测试套无需引用所有资源文件，只需要引用本文件即可
+Resource          通用控件封装_组织机构下拉树(DeptDDTree).txt
+Resource          通用控件封装_下拉树(DropDownTree).txt
+Resource          通用控件封装_列表菜单(AppGridMenu).txt
+Resource          通用操作封装.txt
+Resource          通用控件封装_列表(AppGrid).txt
+Resource          通用控件封装_项目下拉树(ProjectDropDownTree).txt
+Resource          通用控件封装_列表树(AppGridTree).txt
+Resource          通用控件封装_重复控件(AppRepeater).txt
+Resource          通用控件封装_可编辑树型列表(AppGridTreeEdit).txt
+Resource          通用控件封装_单一选择树(SingleSelectTree).txt
+Resource          通用控件封装_表单(AppForm).txt
+Resource          通用验证封装.txt
+Resource          通用工具方法.txt
+Resource          通用控件封装_项目树(ProjectTree).txt
+Resource          通用参数配置.txt
+Resource          通用控件封装_下拉树基类.txt
+Resource          通用控件封装_可编辑列表(AppGridE).txt
+Resource          通用控件封装_下拉框(SelectBox).txt
+Resource          通用控件封装_查询(AppFind).txt
+Resource          通用控件封装_项目下拉树(ProjDDTree2).txt
+Resource          通用控件封装_项目下拉树(ProjDDTree).txt
+Resource          通用控件封装_可编辑列表(AppGridE)_含树、复杂表头.txt
+Resource          通用控件封装_项目树(ProjTree).txt

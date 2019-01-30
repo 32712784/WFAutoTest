@@ -1,0 +1,1157 @@
+*** Settings ***
+Library           DatabaseLibrary
+Library           Selenium2Library
+Resource          通用工具方法.txt
+Resource          通用参数配置.txt
+Resource          通用控件封装_可编辑列表(AppGridE).txt
+Resource          通用控件封装_列表树(AppGridTree).txt
+Resource          通用控件封装_可编辑树型列表(AppGridTreeEdit).txt
+Resource          通用控件封装_重复控件(AppRepeater).txt
+Resource          通用控件封装_可编辑列表(AppGridE)_含树、复杂表头.txt
+Resource          通用控件封装_列表(AppGrid).txt
+
+*** Keywords ***
+数据库字段值校验
+    [Arguments]    ${sqlStr}    ${expectedValues}
+    [Documentation]    *功能：*
+    ...
+    ...    数据库验证，获取数据库记录各字段值，与预期值比较，全部字段都匹配则通过
+    ...
+    ...    *参数说明：*
+    ...
+    ...    sqlStr：要执行的SQL语句
+    ...
+    ...    expectedValue：期望值，格式为：value1|value2 ,其中value1、value2分别对应字段field1、field2的值;多条记录的情况下，记录与记录之间用||分割
+    ...
+    ...    *示例1：*
+    ...    单条记录
+    ...
+    ...    数据库字段值校验 | select convert(varchar,guid),convert(varchar,logdatetime,121) from dbo.mtlog where id=28 | 4455671212-3434-342323e-34333-3d3dd3|2013-01-12 : 10.12.000
+    ...
+    ...    *示例2：*
+    ...    多条记录
+    ...
+    ...    数据库字段值校验 | convert(varchar,guid),convert(varchar,logdatetime,121) \ from dbo.mtlog where id in (1,2) | 4455671212-3434-342323e-34333-3d3dd3|2013-01-12 : 10.12.000||67676776-3434-342323e-34333-3d3dd3|2013-01-12 : 10.12.000
+    ...
+    ...    *注意事项：*
+    ...
+    ...    对于带有小数位的数字类型字段，由于Robot平台会自动过滤小数点后结尾处的0，
+    ...
+    ...    所以写sql语句时请将该字段转型为字符串(使用convert函数)，防止把数字型数据作为字符串比较时因为0的原因校验失败。
+    ...
+    ...    比如：字段ColumnA的数据库类型为decimal(18,2)，该字段值为100.110，
+    ...    如果sql写成 select ColumnA ，ColumnB from table1 where id=1，
+    ...    Robot平台读取到该字段的值为100.11，
+    ...    而预期值为100.110，则校验通不过；
+    ...
+    ...    正确的写法应该是：
+    ...    select convert(varchar,ColumnA) ,ColumnB from table1 where id=1
+    ...
+    ...    同理，对应日期类型的字段，Robot又会在后面加3个0，所以需要使用convert(varchar,ColumnDatatime,121)转换
+    Connect To Database Using Custom Params    adodbapi    '${conStr}'
+    ${rsCount}    Row Count    ${sqlStr}
+    @{rs}    query    ${sqlStr}
+    Disconnect from Database
+    ${actualValues}    Evaluate    ''
+    ${fieldCount}    Evaluate    len(u'${expectedValues}'.split('||')[0].split('|'))
+    ${fieldCountMinusOne}    Evaluate    int(${fieldCount})-1
+    ${totalItemCount}    Evaluate    ${rsCount}*${fieldCount}
+    : FOR    ${i}    IN RANGE    ${totalItemCount}
+    \    ${currentRowIndex}    Evaluate    ${i}/${fieldCount}
+    \    ${currentFieldIndex}    Evaluate    ${i}%${fieldCount}
+    \    ${actualValues}    run keyword if    ${currentFieldIndex}==${fieldCountMinusOne}    Evaluate    u'${actualValues}'+ u'${rs[${currentRowIndex}][${currentFieldIndex}]}' + '||'    ELSE
+    \    ...    Evaluate    u'${actualValues}'+ u'${rs[${currentRowIndex}][${currentFieldIndex}]}' + '|'
+    ${actualValues}    Evaluate    u'${actualValues}'.rstrip('||')
+    Run Keyword And Continue On Failure    Run Keyword If    '${actualValues}' != '${expectedValues}'    fail    数据库字段值校验未通过：字段期望值为${expectedValues}，但实际值为${actualValues}
+
+列表(AppGrid)记录存在性校验
+    [Arguments]    ${locatorColumnNamesAndValues}    ${expectedValue}
+    [Documentation]    *功能：*
+    ...
+    ...    列表控件(AppGrid)记录存在性校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorColumnNamesAndValues：用于定位行的列表头和对应的值，格式为: column1=value1&column2=value2，；如果列名中包含=，请用*eq*代替
+    ...
+    ...    expectedValue: 期望值 1：记录存在 0：记录不存在
+    ...
+    ...    *示例：*
+    ...
+    ...    列表(AppGrid)记录存在性校验 | 合同编号=xrqcb-002-2013-09-0003 | 1
+    #parse locate columns name and values
+    ${columnNameList}    ${valueList}    _parseQueryStringToArray    ${locatorColumnNamesAndValues}
+    _clearAutoExpanderTD_AppGrid
+    #set locate column index info
+    ${columnIndexInfo}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;}var gridBar=window.document.getElementById('gridBar');if(!gridBar){return'0|||封装提示信息：没找到id为"girdBar"的元素。请检查是否进入了正确的iframe，只需进入AppGrid对应的iframe即可，不要进入数据行的iframe了';}var rowHeader=gridBar.rows[0];var columnNames=${columnNameList};var columnIndexInfo={};var foundColumn;for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j++){if(rp(rowHeader.cells[j].innerText)==columnNames[i]){columnIndexInfo[columnNames[i]]=parseInt(j/2);foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}gridBar.columnIndexInfo=columnIndexInfo;return'1|||'+formatObject(columnIndexInfo);
+    select frame    ifrmGrid
+    #locate tr
+    ${locateTrExists}    _myExecuteJS    var columnIndexList=[];var valueList=${valueList};var columnIndexInfo=window.parent.window.document.getElementById('gridBar').columnIndexInfo;var columnNameList=${columnNameList};function checkCellValue(row,cellIndex,value){if(row.cells[cellIndex]&&row.cells[cellIndex].innerText==value){return true;}else{return false;}}for(var i=0;i<columnNameList.length;i++)columnIndexList.push(columnIndexInfo[columnNameList[i]]);var matched;var gridData=window.document.getElementById('gridBodyTable');for(var i=0;i<gridData.rows.length;i++){matched=true;for(var j=0;j<columnIndexList.length;j++){matched=matched&&checkCellValue(gridData.rows[i],columnIndexList[j],valueList[j]);}if(matched){return'1|||1';}}return'1|||0';
+    Run Keyword And Ignore Error    返回上级Iframe
+    #check if locate tr exists
+    ${sum}    Evaluate    int(${locateTrExists}) + int(${expectedValue})
+    Run Keyword And Continue On Failure    run keyword if    '${sum}' == '1'    fail    列表(AppGrid)记录存在性校验未通过 ：期望值为${expectedValue}，实际值为${locateTrExists}
+
+列表(AppGrid)字段值校验
+    [Arguments]    ${locatorColumnNamesAndValues}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    列表控件(AppGrid)单元格值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorColumnNamesAndValues：用于定位行的列表头和对应的值，格式为: column1=value1&column2=value2，；如果列名中包含=，请用*eq*代替
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ；如果列名中包含=，请用*eq*代替；
+    ...
+    ...    *示例：*
+    ...
+    ...    列表控件(AppGrid)字段值校验 | 合同编号=xrqcb-002-2013-09-0003 | 合同名称=已定非合同&状态=审核
+    #parse locate columns name and values
+    ${columnNameList}    ${valueList}    _parseQueryStringToArray    ${locatorColumnNamesAndValues}
+    _clearAutoExpanderTD_AppGrid
+    #set locate column index info
+    ${columnIndexInfo}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;}var gridBar=window.document.getElementById('gridBar');if(!gridBar){return'0|||封装提示信息：没找到id为"girdBar"的元素。请检查是否进入了正确的iframe，只需进入AppGrid对应的iframe即可，不要进入数据行的iframe了';}var rowHeader=gridBar.rows[0];var columnNames=${columnNameList};var columnIndexInfo={};var foundColumn;for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j++){if(rp(rowHeader.cells[j].innerText)==columnNames[i]){columnIndexInfo[columnNames[i]]=parseInt(j/2);foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}gridBar.columnIndexInfo=columnIndexInfo;return'1|||'+formatObject(columnIndexInfo);
+    #parse expected columns name and values
+    ${expectedColumnNameList}    ${expectedValueList}    _parseQueryStringToArray    ${expectedColumnNamesAndValues}
+    #set expected column index info
+    ${expectedColumnIndexInfo}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;}var gridBar=window.document.getElementById('gridBar');if(!gridBar){return'0|||封装提示信息：没找到id为"girdBar"的元素。请检查是否进入了正确的iframe，只需进入AppGrid对应的iframe即可，不要进入数据行的iframe了';}var rowHeader=gridBar.rows[0];var columnNames=${expectedColumnNameList};var columnIndexInfo={};var foundColumn;for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j++){if(rp(rowHeader.cells[j].innerText)==columnNames[i]){columnIndexInfo[columnNames[i]]=parseInt(j/2);foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}gridBar.expectedColumnIndexInfo=columnIndexInfo;return'1|||'+formatObject(columnIndexInfo);
+    select frame    ifrmGrid
+    #locate tr
+    _myExecuteJS    var columnIndexList = [];var valueList = ${valueList};var columnIndexInfo = window.parent.window.document.getElementById('gridBar').columnIndexInfo;var columnNameList=${columnNameList};for(var i=0;i<columnNameList.length;i++)columnIndexList.push(columnIndexInfo[columnNameList[i]]);var matched;var gridData = window.document.getElementById('gridBodyTable');for(var i=0;i<gridData.rows.length;i++){matched = true;for(var j=0;j<columnIndexList.length;j++){matched = matched && gridData.rows[i].cells[columnIndexList[j]].innerText == valueList[j];}if(matched){gridData.rowIndexToCheck=i;break;}}if(matched){gridData.setAttribute('locateTr','YES');}else{gridData.setAttribute('locateTr','NO');}
+    #check if locate tr exists
+    ${locateTrExists}    Get Element Attribute    //table[@id='gridBodyTable']@locateTr
+    Run Keyword And Continue On Failure    run keyword if    '${locateTrExists}' == 'NO'    fail    列表(AppGrid)单元格值校验未通过: 行"${locatorColumnNamesAndValues}"不存在
+    return from keyword if    '${locateTrExists}' == 'NO'
+    #check expected values
+    ${checkResult}    _myExecuteJS    var columnIndexList=[];var valueList=${expectedValueList};var locatorColumnNamesAndValues='${locatorColumnNamesAndValues}';var columnIndexInfo=window.parent.window.document.getElementById('gridBar').expectedColumnIndexInfo;var columnNameList=${expectedColumnNameList};var checkMsg='';for(var i=0;i<columnNameList.length;i++)columnIndexList.push(columnIndexInfo[columnNameList[i]]);var actualValue='';var gridData=window.document.getElementById('gridBodyTable');for(var j=0;j<columnIndexList.length;j++){actualValue=gridData.rows[gridData.rowIndexToCheck].cells[columnIndexList[j]].innerText;if(actualValue!=valueList[j]){checkMsg+='字段"'+columnNameList[j]+'"的期望值为"'+valueList[j]+'",但实际值为"'+actualValue+'";';}}if(checkMsg!=''){checkMsg='行"'+locatorColumnNamesAndValues+'"，'+checkMsg;}return'1|||'+checkMsg;
+    Run Keyword And Continue On Failure    run keyword if    '${checkResult}' != ''    fail    列表(AppGrid)单元格值校验未通过 ：${checkResult}
+    Run Keyword And Ignore Error    返回上级Iframe
+
+列表(AppGrid)字段值校验_根据序号
+    [Arguments]    ${rowNumber}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    列表控件(AppGrid)单元格值校验(根据序号)
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowNumber：序号，从1开始
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ；如果列名中包含=，请用*eq*代替；
+    ...
+    ...    *示例：*
+    ...
+    ...    列表控件(AppGrid)字段值校验_根据序号 | 10 | 合同名称=已定非合同&状态=审核
+    #parse expected columns name and values
+    ${expectedColumnNameList}    ${expectedValueList}    _parseQueryStringToArray    ${expectedColumnNamesAndValues}
+    _clearAutoExpanderTD_AppGrid
+    #set expected column index info
+    ${expectedColumnIndexInfo}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;}var gridBar=window.document.getElementById('gridBar');if(!gridBar){return'0|||封装提示信息：没找到id为"girdBar"的元素。请检查是否进入了正确的iframe，只需进入AppGrid对应的iframe即可，不要进入数据行的iframe了';}var rowHeader=gridBar.rows[0];var columnNames=${expectedColumnNameList};var columnIndexInfo={};var foundColumn;for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j++){if(rp(rowHeader.cells[j].innerText)==columnNames[i]){columnIndexInfo[columnNames[i]]=parseInt(j/2);foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}gridBar.expectedColumnIndexInfo=columnIndexInfo;return'1|||'+formatObject(columnIndexInfo);
+    select frame    ifrmGrid
+    #check expected values
+    ${checkResult}    _myExecuteJS    try{var columnIndexList=[];var valueList=${expectedValueList};var rowNumber=${rowNumber};var columnIndexInfo=window.parent.window.document.getElementById('gridBar').expectedColumnIndexInfo;var columnNameList=${expectedColumnNameList};var checkMsg='';for(var i=0;i<columnNameList.length;i++)columnIndexList.push(columnIndexInfo[columnNameList[i]]);var actualValue='';var gridData=window.document.getElementById('gridBodyTable');for(var j=0;j<columnIndexList.length;j++){actualValue=gridData.rows[rowNumber-1].cells[columnIndexList[j]].innerText;if(actualValue!=valueList[j]){checkMsg+='字段"'+columnNameList[j]+'"的期望值为"'+valueList[j]+'",但实际值为"'+actualValue+'";';}}if(checkMsg!=''){checkMsg='第'+rowNumber+'行'+'，'+checkMsg;}return'1|||'+checkMsg;}catch(e){return '0|||' + e.name \ + \ \ " : \ " \ \ + \ e.message;}
+    Run Keyword And Continue On Failure    run keyword if    '${checkResult}' != ''    fail    列表(AppGrid)单元格值校验_根据序号未通过 ：${checkResult}
+    Run Keyword And Ignore Error    返回上级Iframe
+
+列表(AppGrid)字段值批量校验
+    [Arguments]    ${locatorAndExpectedData}    ${locatorColumnNames}    ${expectedColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...
+    ...    locatorColumnNames ：用于定位的列头集合，列与列之间用&连接，如columnA&columnB
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndExpectedData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    列表(AppGrid)字段值批量校验 | ${locatorAndExpectedData} | 序号&款项类型 | 款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${locatorColumnNamesAndValuesList}    ${expectedColumnNamesAndValuesList}    _buildBatchLocatorAndInputVars    ${locatorAndExpectedData}    ${locatorColumnNames}    ${expectedColumnNames}    ${rowFilterCondition}
+    Return From Keyword If    '${locatorColumnNamesAndValuesList}'=='' or '${expectedColumnNamesAndValuesList}' == ''
+    ${locatorColumnNamesAndValuesArr}    Evaluate    u'${locatorColumnNamesAndValuesList}'.split('|')
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('|')
+    ${columnNamesAndValuesArrLen}    Evaluate    len(${locatorColumnNamesAndValuesArr})
+    : FOR    ${i}    IN RANGE    ${columnNamesAndValuesArrLen}
+    \    ${locatorColumnNamesAndValues}    Evaluate    ${locatorColumnNamesAndValuesArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    列表(AppGrid)字段值校验    ${locatorColumnNamesAndValues}    ${expectedColumnNamesAndValues}
+
+列表(AppGrid)字段值批量校验_根据序号
+    [Arguments]    ${rowNumberAndExpectedData}    ${rowNumberColumnName}    ${expectedColumnNames}=    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值（根据序号）
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowNumberAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...
+    ...    rowNumberColumnName ：序号列对应的列名
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD；为空表示校验所有列。
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${rowNumberAndExpectedData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    列表(AppGrid)字段值批量校验_根据序号 | ${rowNumberAndExpectedData} | 序号 | 款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${rowNumberAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${expectedColumnNamesAndValuesList}    ${rowNumberList}    _buildBatchInputVars_containRowNumberColumn    ${rowNumberAndExpectedData}    ${rowNumberColumnName}    ${expectedColumnNames}    ${rowFilterCondition}
+    Return From Keyword If    '${expectedColumnNamesAndValuesList}'=='' or '${rowNumberList}'==''
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('|')
+    ${rowNumberArr}    Evaluate    u'${rowNumberList}'.split('|')
+    ${rowCount}    Evaluate    len(${rowNumberArr})
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${rowNumber}    Evaluate    ${rowNumberArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    列表(AppGrid)字段值校验_根据序号    ${rowNumber}    ${expectedColumnNamesAndValues}
+
+重复控件(AppRepeater)记录存在性校验
+    [Arguments]    ${tableId}    ${locatorColumnNamesAndValues}    ${expectedValue}
+    [Documentation]    *功能：*
+    ...
+    ...    重复控件(AppRepeater)记录存在性校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId:控件对应的Table元素的Id
+    ...
+    ...    locatorColumnNamesAndValues：用于定位行的列表头和对应的值，格式为: column1=value1&column2=value2 (行标题有换行的用|表示)；如果列名中包含=，请用*eq*代替
+    ...
+    ...
+    ...    expectedValue: 期望值 1：记录存在 0：记录不存在
+    ...
+    ...    *示例：*
+    ...
+    ...    重复控件(AppRepeater)记录存在性校验 | tableId1 | 合同编号=xrqcb-002-2013-09-0003 | 1
+    #parse locate columns name and values
+    ${columnNameList}    ${valueList}    _parseQueryStringToArray    ${locatorColumnNamesAndValues}
+    ${headerMode}    _getRepeaterHeaderMode    ${tableId}
+    #set locate column index info
+    ${locateColumnIndexInfo}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;};function checkColumnMatched(columnInnerText,columnName){if(columnName.indexOf('|')>-1){var textArr=columnName.split('|');var text1=textArr[0];var text2=textArr[1];return(columnInnerText.indexOf(text1)>-1&&columnInnerText.indexOf(text2)>-1);}else{return columnInnerText==columnName;}};var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：未找到id为"'+tableId+'"的table元素，请检查是否正确的传入tableId，或者进入了正确的iframe';}var rowHeader=table.rows[0];var columnNames=${columnNameList};var headerMode=${headerMode};var dicColumnAndIndex={};var foundColumn;if(headerMode==1){for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j+=2){if(rowHeader.cells[j].innerText&&checkColumnMatched(rp(rowHeader.cells[j].innerText),columnNames[i])){dicColumnAndIndex[columnNames[i]]=parseInt(j/2);foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}table.dicColumnAndIndex=dicColumnAndIndex;return'1|||'+formatObject(dicColumnAndIndex);}else if(headerMode==2){for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j++){if(rowHeader.cells[j].innerText&&checkColumnMatched(rp(rowHeader.cells[j].innerText),columnNames[i])){dicColumnAndIndex[columnNames[i]]=j;foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}table.dicColumnAndIndex=dicColumnAndIndex;return'1|||'+formatObject(dicColumnAndIndex);}
+    #locate tr
+    ${locateTrExists}    _myExecuteJS    var columnIndexList=[];var valueList=${valueList};function checkMatch(cell,value){var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length>0){return(inputs[0].value==value);}var selects=cell.getElementsByTagName('select');if(selects&&selects.length>0){var select=selects[0];return select.options[select.selectedIndex].text==value;}return cell.innerText==value;};var gridData=window.document.getElementById('${tableId}');var columnIndexInfo=gridData.dicColumnAndIndex;var columnNameList=${columnNameList};for(var i=0;i<columnNameList.length;i++)columnIndexList.push(columnIndexInfo[columnNameList[i]]);var matched;for(var i=1;i<gridData.rows.length;i++){matched=true;for(var j=0;j<columnIndexList.length;j++){matched=matched&&checkMatch(gridData.rows[i].cells[columnIndexList[j]],valueList[j]);}if(matched){return'1|||1';}}return'1|||0';
+    #check if locate tr exists
+    ${sum}    Evaluate    int(${locateTrExists}) + int(${expectedValue})
+    Run Keyword And Continue On Failure    run keyword if    '${sum}' == '1'    fail    重复控件(AppRepeater)记录存在性校验未通过: 期望值为${expectedValue}，实际值为${locateTrExists}
+
+重复控件(AppRepeater)字段值校验
+    [Arguments]    ${tableId}    ${locatorColumnNamesAndValues}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    重复控件(AppRepeater)单元格值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId:控件对应的Table元素的Id
+    ...
+    ...    locatorColumnNamesAndValues：用于定位行的列表头和对应的值，格式为: column1=value1&column2=value2 (行标题有换行的用|表示)；如果列名中包含=，请用*eq*代替
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 (行标题有换行的用|表示)；如果列名中包含=，请用*eq*代替
+    ...
+    ...    *示例：*
+    ...
+    ...    重复控件(AppRepeater)字段值校验 | tableId1 | 合同编号=xrqcb-002-2013-09-0003 | 合同名称=已定非合同&状态=审核
+    #parse locate columns name and values
+    ${columnNameList}    ${valueList}    _parseQueryStringToArray    ${locatorColumnNamesAndValues}
+    ${headerMode}    _getRepeaterHeaderMode    ${tableId}
+    #set locate column index info
+    ${locateColumnIndexInfo}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;};function checkColumnMatched(columnInnerText,columnName){if(columnName.indexOf('|')>-1){var textArr=columnName.split('|');var text1=textArr[0];var text2=textArr[1];return(columnInnerText.indexOf(text1)>-1&&columnInnerText.indexOf(text2)>-1);}else{return columnInnerText==columnName;}};var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：未找到id为"'+tableId+'"的table元素，请检查是否正确的传入tableId，或者进入了正确的iframe';}var rowHeader=table.rows[0];var columnNames=${columnNameList};var headerMode=${headerMode};var dicColumnAndIndex={};var foundColumn;if(headerMode==1){for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j+=2){if(rowHeader.cells[j].innerText&&checkColumnMatched(rp(rowHeader.cells[j].innerText),columnNames[i])){dicColumnAndIndex[columnNames[i]]=parseInt(j/2);foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}table.dicColumnAndIndex=dicColumnAndIndex;return'1|||'+formatObject(dicColumnAndIndex);}else if(headerMode==2){for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j++){if(rowHeader.cells[j].innerText&&checkColumnMatched(rp(rowHeader.cells[j].innerText),columnNames[i])){dicColumnAndIndex[columnNames[i]]=j;foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}table.dicColumnAndIndex=dicColumnAndIndex;return'1|||'+formatObject(dicColumnAndIndex);}
+    #parse expected columns name and values
+    ${expectedColumnNameList}    ${expectedValueList}    _parseQueryStringToArray    ${expectedColumnNamesAndValues}
+    #set expected column index info
+    ${expectedColumnIndexInfo}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;};function checkColumnMatched(columnInnerText,columnName){if(columnName.indexOf('|')>-1){var textArr=columnName.split('|');var text1=textArr[0];var text2=textArr[1];return(columnInnerText.indexOf(text1)>-1&&columnInnerText.indexOf(text2)>-1);}else{return columnInnerText==columnName;}};var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：未找到id为"'+tableId+'"的table元素，请检查是否正确的传入tableId，或者进入了正确的iframe';}var rowHeader=table.rows[0];var columnNames=${expectedColumnNameList};var headerMode=${headerMode};var columnIndexInfo={};var foundColumn;if(headerMode==1){for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j+=2){if(rowHeader.cells[j].innerText&&checkColumnMatched(rp(rowHeader.cells[j].innerText),columnNames[i])){columnIndexInfo[columnNames[i]]=parseInt(j/2);foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}table.expectedColumnIndexInfo=columnIndexInfo;return'1|||'+formatObject(columnIndexInfo);}else if(headerMode==2){for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j++){if(rowHeader.cells[j].innerText&&checkColumnMatched(rp(rowHeader.cells[j].innerText),columnNames[i])){columnIndexInfo[columnNames[i]]=j;foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}table.expectedColumnIndexInfo=columnIndexInfo;return'1|||'+formatObject(columnIndexInfo);}
+    #locate tr
+    ${rowIndexToCheck}    _myExecuteJS    var columnIndexList=[];var valueList=${valueList};function checkMatch(cell,value){var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length>0){return(inputs[0].value==value);}var selects=cell.getElementsByTagName('select');if(selects&&selects.length>0){var select=selects[0];return select.options[select.selectedIndex].text==value;}return cell.innerText==value;};var gridData=window.document.getElementById('${tableId}');var columnIndexInfo=gridData.dicColumnAndIndex;var columnNameList=${columnNameList};for(var i=0;i<columnNameList.length;i++)columnIndexList.push(columnIndexInfo[columnNameList[i]]);var matched;for(var i=1;i<gridData.rows.length;i++){matched=true;for(var j=0;j<columnIndexList.length;j++){matched=matched&&checkMatch(gridData.rows[i].cells[columnIndexList[j]],valueList[j]);}if(matched){gridData.rowIndexToCheck=i;break;}}if(matched){gridData.setAttribute('locateTr','YES');return'1|||'+gridData.rowIndexToCheck;}else{gridData.setAttribute('locateTr','NO');}
+    #check if locate tr exists
+    ${locateTrExists}    Get Element Attribute    //table[@id='${tableId}']@locateTr
+    Run Keyword And Continue On Failure    run keyword if    '${locateTrExists}' == 'NO'    fail    重复控件(AppRepeater)单元格值校验未通过: 满足条件"${locatorColumnNamesAndValues}"的行不存在
+    #if only want to check tr exist, just return
+    return from keyword if    '${locateTrExists}' == 'NO'
+    #check expected values
+    ${checkResult}    _myExecuteJS    var columnIndexList=[];var valueList=${expectedValueList};var locatorColumnNamesAndValues='${locatorColumnNamesAndValues}';function checkMatch(cell,value){var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length>0){return(inputs[0].value==value);}var selects=cell.getElementsByTagName('select');if(selects&&selects.length>0){var select=selects[0];return select.options[select.selectedIndex].text==value;}return cell.innerText==value;};function getActualValue(cell){var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length>0){return inputs[0].value;}var selects=cell.getElementsByTagName('select');if(selects&&selects.length>0){var select=selects[0];return select.options[select.selectedIndex].text;}return cell.innerText;};var checkMsg='';var gridData=window.document.getElementById('${tableId}');var columnIndexInfo=gridData.expectedColumnIndexInfo;var columnNameList=${expectedColumnNameList};for(var i=0;i<columnNameList.length;i++)columnIndexList.push(columnIndexInfo[columnNameList[i]]);for(var j=0;j<columnIndexList.length;j++){if(!checkMatch(gridData.rows[gridData.rowIndexToCheck].cells[columnIndexList[j]],valueList[j])){checkMsg+='字段"'+columnNameList[j]+'"的期望值为"'+valueList[j]+'",但是实际值为"'+getActualValue(gridData.rows[gridData.rowIndexToCheck].cells[columnIndexList[j]])+'";';}}if(checkMsg!=''){checkMsg='行"'+locatorColumnNamesAndValues+'"，'+checkMsg;}return'1|||'+checkMsg;
+    Run Keyword And Continue On Failure    run keyword if    '${checkResult}' != ''    fail    重复控件(AppRepeater)单元格值校验未通过 ：${checkResult}
+
+重复控件(AppRepeater)_含树_字段值校验
+    [Arguments]    ${tableId}    ${levelColumnName}    ${treePath}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    字段值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId：控件对应的Table元素的id
+    ...
+    ...    levelColumnName : 层级所在列名
+    ...
+    ...    treePath ：要展开的树节点路径
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ，行标题有换行的用|表示；如果列名中包含=，请用*eq*代替
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    重复控件(AppRepeater)_含树_字段值校验 | Table1 | 成本科目名称 | 中间科目/公司库存采购合同/库存水泥 | 对应金额=1300.00&预估变更金额=1200
+    ${selectRowIndex}    _expandTreeRepeater    ${tableId}    ${levelColumnName}    ${treePath}
+    ${splitStr}    Set Variable    ^
+    ${columnNames}    ${values}    _parseQueryStringToSplitString    ${expectedColumnNamesAndValues}    ${splitStr}
+    ${columnNameArr}    evaluate    u'${columnNames}'.split('${splitStr}')
+    ${valueArr}    evaluate    u'${values}'.split('${splitStr}')
+    ${columnCount}    evaluate    len(${columnNameArr})
+    : FOR    ${i}    IN RANGE    ${columnCount}
+    \    ${columnIndex}    _getColumnIndex_Repeater    ${tableId}    ${columnNameArr[${i}]}
+    \    ${CheckResult}    _checkTableCell    ${tableId}    ${selectRowIndex}    ${columnIndex}    ${valueArr[${i}]}
+    \    Run Keyword And Continue On Failure    run keyword if    '${CheckResult}' != 'PASS'    fail    重复控件(AppRepeater)_含树_字段值校验未通过：树节点路径："${treePath}"，字段："${columnNameArr[${i}]}"，${CheckResult}
+
+重复控件(AppRepeater)_含树_字段值批量校验
+    [Arguments]    ${tableId}    ${locatorAndExpectedData}    ${levelColumnName}    ${treePathColumnName}    ${expectedColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId：控件对应的Table元素的id
+    ...
+    ...    locatorAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    levelColumnName : 层级所在列标题
+    ...
+    ...    treePathColumnName ：数组中层级路径所在的列名
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndInputData} | Evaluate | [[u'序号',u'层级',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款1/工程合同款2',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    重复控件(AppRepeater)_含树_字段值批量校验 | Table1 | ${locatorAndInputData} | 预算分解内容 | 层级 | 款项类型&款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${splitStr}    Evaluate    '^'
+    ${expectedColumnNamesAndValuesList}    ${treePathList}    _buildBatchInputVars_containRowNumberColumn    ${locatorAndExpectedData}    ${treePathColumnName}    ${expectedColumnNames}    ${rowFilterCondition}
+    ...    ${splitStr}
+    Return From Keyword If    '${expectedColumnNamesAndValuesList}'=='' or '${treePathList}'==''
+    ${treePathArr}    Evaluate    u'${treePathList}'.split('${splitStr}')
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('${splitStr}')
+    ${rowCount}    Evaluate    len(${treePathArr})
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${treePath}    Evaluate    ${treePathArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    重复控件(AppRepeater)_含树_字段值校验    ${tableId}    ${levelColumnName}    ${treePath}    ${expectedColumnNamesAndValues}
+
+重复控件(AppRepeater)字段值校验_根据序号
+    [Arguments]    ${tableId}    ${rowNumber}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    重复控件(AppRepeater)单元格值校验(根据序号)
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId:控件对应的Table元素的Id
+    ...
+    ...    rowNumber：序号，从1开始
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ；如果列名中包含=，请用*eq*代替；
+    ...
+    ...    *示例：*
+    ...
+    ...    重复控件(AppRepeater)字段值校验_根据序号 | 10 | 合同名称=已定非合同&状态=审核
+    ${headerMode}    _getRepeaterHeaderMode    ${tableId}
+    #parse expected columns name and values
+    ${expectedColumnNameList}    ${expectedValueList}    _parseQueryStringToArray    ${expectedColumnNamesAndValues}
+    #set expected column index info
+    ${expectedColumnIndexInfo}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function formatObject(o){var s='';for(var key in o){s+=key+':'+o[key]+' ';}return s;};function checkColumnMatched(columnInnerText,columnName){if(columnName.indexOf('|')>-1){var textArr=columnName.split('|');var text1=textArr[0];var text2=textArr[1];return(columnInnerText.indexOf(text1)>-1&&columnInnerText.indexOf(text2)>-1);}else{return columnInnerText==columnName;}};var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：未找到id为"'+tableId+'"的table元素，请检查是否正确的传入tableId，或者进入了正确的iframe';}var rowHeader=table.rows[0];var columnNames=${expectedColumnNameList};var headerMode=${headerMode};var columnIndexInfo={};var foundColumn;if(headerMode==1){for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j+=2){if(rowHeader.cells[j].innerText&&checkColumnMatched(rp(rowHeader.cells[j].innerText),columnNames[i])){columnIndexInfo[columnNames[i]]=parseInt(j/2);foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}table.expectedColumnIndexInfo=columnIndexInfo;return'1|||'+formatObject(columnIndexInfo);}else if(headerMode==2){for(var i=0;i<columnNames.length;i++){foundColumn=false;for(var j=0;j<rowHeader.cells.length;j++){if(rowHeader.cells[j].innerText&&checkColumnMatched(rp(rowHeader.cells[j].innerText),columnNames[i])){columnIndexInfo[columnNames[i]]=j;foundColumn=true;break;}}if(!foundColumn){return'0|||封装提示信息：未找到列"'+columnNames[i]+'"，请检查参数是否正确';}}table.expectedColumnIndexInfo=columnIndexInfo;return'1|||'+formatObject(columnIndexInfo);}
+    #check expected values
+    ${checkResult}    _myExecuteJS    var columnIndexList=[];var valueList=${expectedValueList};var rowNumber=${rowNumber};function checkMatch(cell,value){var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length>0){return(inputs[0].value==value);}var selects=cell.getElementsByTagName('select');if(selects&&selects.length>0){var select=selects[0];return select.options[select.selectedIndex].text==value;}if(cell.innerText){return cell.innerText==value;}else{return value=='';}};function getActualValue(cell){var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length>0){return inputs[0].value;}var selects=cell.getElementsByTagName('select');if(selects&&selects.length>0){var select=selects[0];return select.options[select.selectedIndex].text;}if(cell.innerText){return cell.innerText;}else{return'';}};var checkMsg='';var gridData=window.document.getElementById('${tableId}');var columnIndexInfo=gridData.expectedColumnIndexInfo;var columnNameList=${expectedColumnNameList};for(var i=0;i<columnNameList.length;i++)columnIndexList.push(columnIndexInfo[columnNameList[i]]);for(var j=0;j<columnIndexList.length;j++){if(!checkMatch(gridData.rows[rowNumber].cells[columnIndexList[j]],valueList[j])){checkMsg+='字段"'+columnNameList[j]+'"的期望值为"'+valueList[j]+'",但是实际值为"'+getActualValue(gridData.rows[rowNumber].cells[columnIndexList[j]])+'";';}}if(checkMsg!=''){checkMsg='第'+rowNumber+'行，'+checkMsg;}return'1|||'+checkMsg;
+    Run Keyword And Continue On Failure    run keyword if    '${checkResult}' != ''    fail    重复控件(AppRepeater)单元格值校验_根据序号未通过 ：${checkResult}
+
+重复控件(AppRepeater)字段值批量校验
+    [Arguments]    ${tableId}    ${locatorAndExpectedData}    ${locatorColumnNames}    ${expectedColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId:AppRepeater控件对应的table元素的id
+    ...
+    ...    locatorAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...
+    ...    locatorColumnNames ：用于定位的列头集合，列与列之间用&连接，如columnA&columnB
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndExpectedData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    重复控件(AppRepeater)字段值批量校验 | appRepeater1 | ${locatorAndExpectedData} | 序号&款项类型 | 款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${splitStr}    Evaluate    u'^'
+    ${locatorColumnNamesAndValuesList}    ${expectedColumnNamesAndValuesList}    _buildBatchLocatorAndInputVars    ${locatorAndExpectedData}    ${locatorColumnNames}    ${expectedColumnNames}    ${rowFilterCondition}
+    ...    ${splitStr}
+    Return From Keyword If    '${locatorColumnNamesAndValuesList}'=='' or '${expectedColumnNamesAndValuesList}' == ''
+    ${locatorColumnNamesAndValuesArr}    Evaluate    u'${locatorColumnNamesAndValuesList}'.split('${splitStr}')
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('${splitStr}')
+    ${columnNamesAndValuesArrLen}    Evaluate    len(${locatorColumnNamesAndValuesArr})
+    : FOR    ${i}    IN RANGE    ${columnNamesAndValuesArrLen}
+    \    ${locatorColumnNamesAndValues}    Evaluate    ${locatorColumnNamesAndValuesArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    重复控件(AppRepeater)字段值校验    ${tableId}    ${locatorColumnNamesAndValues}    ${expectedColumnNamesAndValues}
+
+重复控件(AppRepeater)字段值批量校验_根据序号
+    [Arguments]    ${tableId}    ${rowNumberAndExpectedData}    ${rowNumberColumnName}    ${expectedColumnNames}=    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值（根据序号）
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId：控件对应table元素id
+    ...
+    ...    rowNumberAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...
+    ...    rowNumberColumnName ：序号列对应的列名
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD；为空表示校验所有列。
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${rowNumberAndExpectedData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    重复控件(AppRepeater)字段值批量校验_根据序号 | ${rowNumberAndExpectedData} | 序号 | 款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${rowNumberAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${splitStr}    Evaluate    u'^'
+    ${expectedColumnNamesAndValuesList}    ${rowNumberList}    _buildBatchInputVars_containRowNumberColumn    ${rowNumberAndExpectedData}    ${rowNumberColumnName}    ${expectedColumnNames}    ${rowFilterCondition}
+    ...    ${splitStr}
+    Return From Keyword If    '${expectedColumnNamesAndValuesList}'=='' or '${rowNumberList}'==''
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('${splitStr}')
+    ${rowNumberArr}    Evaluate    u'${rowNumberList}'.split('${splitStr}')
+    ${rowCount}    Evaluate    len(${rowNumberArr})
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${rowNumber}    Evaluate    ${rowNumberArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    重复控件(AppRepeater)字段值校验_根据序号    ${tableId}    ${rowNumber}    ${expectedColumnNamesAndValues}
+
+列表树(AppGridTree)字段值校验
+    [Arguments]    ${divId}    ${levelColumnName}    ${treePath}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    APPGridTree字段值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    divId：控件对应的DIV元素的id
+    ...
+    ...    levelColumnName : 层级所在列名
+    ...
+    ...    treePath ：要展开的树节点路径
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ，行标题有换行的用|表示；如果列名中包含=，请用*eq*代替
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    列表树(AppGridTree)字段值校验 | appGridTree | 成本科目名称 | 中间科目/公司库存采购合同/库存水泥 | 对应金额=1300.00&预估变更金额=1200
+    Map_AppGridTree_选中行    ${divId}    ${levelColumnName}    ${treePath}
+    ${splitStr}    Set Variable    ^
+    ${columnNames}    ${values}    _parseQueryStringToSplitString    ${expectedColumnNamesAndValues}    ${splitStr}
+    ${columnNameArr}    evaluate    u'${columnNames}'.split('${splitStr}')
+    ${valueArr}    evaluate    u'${values}'.split('${splitStr}')
+    ${columnCount}    evaluate    len(${columnNameArr})
+    : FOR    ${i}    IN RANGE    ${columnCount}
+    \    ${tableId}    ${rowIndex}    ${columnIndex}    _getCellLocation_AppGridTree    ${divId}    ${columnNameArr[${i}]}
+    \    ${CheckResult}    _checkTableCell    ${tableId}    ${rowIndex}    ${columnIndex}    ${valueArr[${i}]}
+    \    Run Keyword And Continue On Failure    run keyword if    '${CheckResult}' != 'PASS'    fail    列表树(AppGridTree)字段值校验未通过：树节点路径："${treePath}"，字段："${columnNameArr[${i}]}"，${CheckResult}
+
+列表树(AppGridTree)字段值批量校验
+    [Arguments]    ${divId}    ${locatorAndExpectedData}    ${levelColumnName}    ${treePathColumnName}    ${expectedColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    divId：控件对应的DIV元素的id
+    ...
+    ...    locatorAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    levelColumnName : 层级所在列标题
+    ...
+    ...    treePathColumnName ：数组中层级路径所在的列名
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndInputData} | Evaluate | [[u'序号',u'层级',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款1/工程合同款2',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    列表树(AppGridTree)字段值批量校验 | appGridTree | ${locatorAndInputData} | 预算分解内容 | 层级 | 款项类型&款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${splitStr}    Evaluate    '^'
+    ${expectedColumnNamesAndValuesList}    ${treePathList}    _buildBatchInputVars_containRowNumberColumn    ${locatorAndExpectedData}    ${treePathColumnName}    ${expectedColumnNames}    ${rowFilterCondition}
+    ...    ${splitStr}
+    Return From Keyword If    '${expectedColumnNamesAndValuesList}'=='' or '${treePathList}'==''
+    ${treePathArr}    Evaluate    u'${treePathList}'.split('${splitStr}')
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('${splitStr}')
+    ${rowCount}    Evaluate    len(${treePathArr})
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${treePath}    Evaluate    ${treePathArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    列表树(AppGridTree)字段值校验    ${divId}    ${levelColumnName}    ${treePath}    ${expectedColumnNamesAndValues}
+
+可编辑树型列表(AppGridTreeEdit)字段值校验
+    [Arguments]    ${divId}    ${levelColumnName}    ${treePath}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    APPGridTreeEdit字段值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    divId：控件对应的DIV元素的id
+    ...
+    ...    levelColumnName : 层级所在列名
+    ...
+    ...    treePath ：要展开的树节点路径
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ；行标题有换行的用|表示；如果列名中包含=，请用*eq*代替
+    ...
+    ...    *示例：*
+    ...
+    ...    可编辑树型列表(AppGridTreeEdit)字段值校验 | appGridTreeEdit1 | 成本科目名称 | 中间科目/公司库存采购合同/库存水泥 | 对应金额=1300.00&预估变更金额=1200
+    列表树(AppGridTree)字段值校验    ${divId}    ${levelColumnName}    ${treePath}    ${expectedColumnNamesAndValues}
+
+可编辑树型列表(AppGridTreeEdit)字段值批量校验
+    [Arguments]    ${divId}    ${locatorAndExpectedData}    ${levelColumnName}    ${treePathColumnName}    ${expectedColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    divId：控件对应的DIV元素的id
+    ...
+    ...    locatorAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    levelColumnName : 层级所在列标题
+    ...
+    ...    treePathColumnName ：数组中层级路径所在的列名
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndInputData} | Evaluate | [[u'序号',u'层级',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款1/工程合同款2',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    可编辑树型列表(AppGridTreeEdit)字段值批量校验 | ${locatorAndInputData} | 预算分解内容 | 层级 | 款项类型&款项名称&计划付款金额&计划付款日期&付款说明
+    列表树(AppGridTree)字段值批量校验    ${divId}    ${locatorAndExpectedData}    ${levelColumnName}    ${treePathColumnName}    ${expectedColumnNames}    ${rowFilterCondition}
+
+可编辑列表(AppGridE)记录存在性校验
+    [Arguments]    ${locatorColumnNamesAndValues}    ${expectedValue}
+    [Documentation]    *功能：*
+    ...
+    ...    可编辑列表(AppGridE)记录存在性校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorColumnNamesAndValues：用于定位行的列表头和对应的值，格式为: column1=value1&column2=value2 (行标题有换行的用|表示)；如果列名中包含=，请用*eq*代替
+    ...
+    ...    expectedValue: 期望值 1：记录存在 0：记录不存在
+    ...
+    ...    *示例：*
+    ...
+    ...    可编辑列表(AppGridE)记录存在性校验 | 合同编号=xrqcb-002-2013-09-0003 | 1
+    ${AppGridE_SelectedRowIndex}    _getRowIndex_AppGridE    ${locatorColumnNamesAndValues}
+    ${locateTrExists}    run keyword if    '${AppGridE_SelectedRowIndex}' == '-1'    Evaluate    '0'    ELSE    Evaluate
+    ...    '1'
+    ${sum}    Evaluate    int(${locateTrExists}) + int(${expectedValue})
+    Run Keyword And Continue On Failure    run keyword if    '${sum}' == '1'    fail    可编辑列表(AppGridE)记录存在性校验未通过: 期望值为${expectedValue}，实际值为${locateTrExists}
+
+可编辑列表(AppGridE)字段值校验
+    [Arguments]    ${locatorColumnNamesAndValues}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    可编辑列表(AppGridE)单元格值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorColumnNamesAndValues：用于定位行的列表头和对应的值，格式为: column1=value1&column2=value2；如果列名中包含=，请用*eq*代替
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ；如果列名中包含=，请用*eq*代替
+    ...
+    ...    *示例：*
+    ...
+    ...    可编辑列表(AppGridE)字段值校验 | 合同编号=xrqcb-002-2013-09-0003 | 合同名称=已定非合同&状态=审核
+    ${AppGridE_SelectedRowIndex}    _getRowIndex_AppGridE    ${locatorColumnNamesAndValues}
+    Run Keyword And Continue On Failure    run keyword if    '${AppGridE_SelectedRowIndex}' == '-1'    fail    可编辑列表(AppGirdE)单元格值校验未通过: 满足条件"${locatorColumnNamesAndValues}"的行不存在
+    return from keyword if    '${AppGridE_SelectedRowIndex}' == '-1'
+    ${expectedColumnNameList}    ${expectedValueList}    _parseQueryStringToSplitString    ${expectedColumnNamesAndValues}
+    ${expectedColumnNameArr}    Evaluate    u'${expectedColumnNameList}'.split('|')
+    ${expectedValueArr}    Evaluate    u'${expectedValueList}'.split('|')
+    ${expectedColumnCount}    Evaluate    len(${expectedColumnNameArr})
+    : FOR    ${i}    IN RANGE    ${expectedColumnCount}
+    \    ${tableLocation}    ${columnIndex}    _getColumnLocation_AppGridE    ${expectedColumnNameArr[${i}]}
+    \    ${divId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    u'AppGridE_LeftDataDiv'    ELSE IF
+    \    ...    '${tableLocation}' == 'Right'    Evaluate    u'AppGridE_RightDataDiv'
+    \    ${random}    Evaluate    random.randint(0,sys.maxint)    random,sys
+    \    Assign Id To Element    //div[@id='${divId}']/table[1]    table${random}
+    \    ${CheckResult}    _checkTableCell    table${random}    ${AppGridE_SelectedRowIndex}    ${columnIndex}    ${expectedValueArr[${i}]}
+    \    Run Keyword And Continue On Failure    run keyword if    '${CheckResult}' != 'PASS'    fail    可编辑列表(AppGridE)字段值校验未通过，行"${locatorColumnNamesAndValues}"，字段：${expectedColumnNameArr[${i}]}，${CheckResult}
+
+可编辑列表(AppGridE)字段值校验_根据序号
+    [Arguments]    ${rowNumber}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    可编辑列表(AppGridE)单元格值校验(根据序号)
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowNumber：序号，从1开始
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ；如果列名中包含=，请用*eq*代替；
+    ...
+    ...    *示例：*
+    ...
+    ...    可编辑列表(AppGridE)字段值校验_根据序号 | 10 | 合同名称=已定非合同&状态=审核
+    ${AppGridE_SelectedRowIndex}    Evaluate    int('${rowNumber}')-1
+    ${expectedColumnNameList}    ${expectedValueList}    _parseQueryStringToSplitString    ${expectedColumnNamesAndValues}
+    ${expectedColumnNameArr}    Evaluate    u'${expectedColumnNameList}'.split('|')
+    ${expectedValueArr}    Evaluate    u'${expectedValueList}'.split('|')
+    ${expectedColumnCount}    Evaluate    len(${expectedColumnNameArr})
+    : FOR    ${i}    IN RANGE    ${expectedColumnCount}
+    \    ${tableLocation}    ${columnIndex}    _getColumnLocation_AppGridE    ${expectedColumnNameArr[${i}]}
+    \    ${divId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    u'AppGridE_LeftDataDiv'    ELSE IF
+    \    ...    '${tableLocation}' == 'Right'    Evaluate    u'AppGridE_RightDataDiv'
+    \    ${random}    Evaluate    random.randint(0,sys.maxint)    random,sys
+    \    Assign Id To Element    //div[@id='${divId}']/table[1]    table${random}
+    \    ${CheckResult}    _checkTableCell    table${random}    ${AppGridE_SelectedRowIndex}    ${columnIndex}    ${expectedValueArr[${i}]}
+    \    Run Keyword And Continue On Failure    run keyword if    '${CheckResult}' != 'PASS'    fail    可编辑列表(AppGridE)字段值校验_根据序号未通过，第${rowNumber}行，字段：${expectedColumnNameArr[${i}]}，${CheckResult}
+
+可编辑列表(AppGridE)字段值批量校验
+    [Arguments]    ${locatorAndExpectedData}    ${locatorColumnNames}    ${expectedColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...
+    ...    locatorColumnNames ：用于定位的列头集合，列与列之间用&连接，如columnA&columnB
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndExpectedData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    可编辑列表(AppGridE)字段值批量校验 | ${locatorAndExpectedData} | 序号&款项类型 | 款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${locatorColumnNamesAndValuesList}    ${expectedColumnNamesAndValuesList}    _buildBatchLocatorAndInputVars    ${locatorAndExpectedData}    ${locatorColumnNames}    ${expectedColumnNames}    ${rowFilterCondition}
+    Return From Keyword If    '${locatorColumnNamesAndValuesList}'=='' or '${expectedColumnNamesAndValuesList}'==''
+    ${locatorColumnNamesAndValuesArr}    Evaluate    u'${locatorColumnNamesAndValuesList}'.split('|')
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('|')
+    ${columnNamesAndValuesArrLen}    Evaluate    len(${locatorColumnNamesAndValuesArr})
+    : FOR    ${i}    IN RANGE    ${columnNamesAndValuesArrLen}
+    \    ${locatorColumnNamesAndValues}    Evaluate    ${locatorColumnNamesAndValuesArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    可编辑列表(AppGridE)字段值校验    ${locatorColumnNamesAndValues}    ${expectedColumnNamesAndValues}
+
+可编辑列表(AppGridE)字段值批量校验_根据序号
+    [Arguments]    ${rowNumberAndExpectedData}    ${rowNumberColumnName}    ${expectedColumnNames}=    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值（根据序号）
+    ...
+    ...    *参数说明：*
+    ...
+    ...    rowNumberAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...
+    ...    rowNumberColumnName ：序号列对应的列名
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD；为空表示校验所有列。
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${rowNumberAndExpectedData} | Evaluate | [[u'序号',u'款项类型',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    可编辑列表(AppGridE)字段值批量校验_根据序号 | ${rowNumberAndExpectedData} | 序号 | 款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${rowNumberAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${splitStr}    Evaluate    '^'
+    ${expectedColumnNamesAndValuesList}    ${rowNumberList}    _buildBatchInputVars_containRowNumberColumn    ${rowNumberAndExpectedData}    ${rowNumberColumnName}    ${expectedColumnNames}    ${rowFilterCondition}
+    ...    ${splitStr}
+    Return From Keyword If    '${expectedColumnNamesAndValuesList}'=='' or '${rowNumberList}'==''
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('${splitStr}')
+    ${rowNumberArr}    Evaluate    u'${rowNumberList}'.split('${splitStr}')
+    ${rowCount}    Evaluate    len(${rowNumberArr})
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${rowNumber}    Evaluate    ${rowNumberArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    可编辑列表(AppGridE)字段值校验_根据序号    ${rowNumber}    ${expectedColumnNamesAndValues}
+
+可编辑列表(AppGridE)(含树、复杂表头)字段值校验
+    [Arguments]    ${levelColumnName}    ${treePath}    ${expectedColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    AppGridE(含树、复杂表头)单元格值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...
+    ...    levelColumnName : 层级所在列名
+    ...
+    ...    treePath ：要展开的树节点路径
+    ...
+    ...    expectedColumnNamesAndValues：期望的列表头和对应的值,格式为: column1=value1&column2=value2 ，行标题有多行的用|分割；如果列名中包含=，请用*eq*代替
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    可编辑列表(AppGridE)(含树、复杂表头)字段值校验 | 成本科目名称 | 中间科目/公司库存采购合同/库存水泥 | 对应金额=1300.00&预估变更金额=1200
+    Map_AppGridE(含树、复杂表头)_选中行    ${levelColumnName}    ${treePath}
+    ${splitStr}    Set Variable    ^
+    ${columnNames}    ${values}    _parseQueryStringToSplitString    ${expectedColumnNamesAndValues}    ${splitStr}
+    ${columnNameArr}    evaluate    u'${columnNames}'.split('${splitStr}')
+    ${valueArr}    evaluate    u'${values}'.split('${splitStr}')
+    ${columnCount}    evaluate    len(${columnNameArr})
+    : FOR    ${i}    IN RANGE    ${columnCount}
+    \    ${tableId}    ${rowIndex}    ${columnIndex}    _getCellLocation_AppGridE(含树、复杂表头)    ${columnNameArr[${i}]}
+    \    ${CheckResult}    _checkTableCell    ${tableId}    ${rowIndex}    ${columnIndex}    ${valueArr[${i}]}
+    \    Run Keyword And Continue On Failure    run keyword if    '${CheckResult}' != 'PASS'    fail    AppGridE(含树、复杂表头)单元格值校验未通过：树节点路径："${treePath}"，字段："${columnNameArr[${i}]}"，${CheckResult}
+
+可编辑列表(AppGridE)(含树、复杂表头)字段值批量校验
+    [Arguments]    ${locatorAndExpectedData}    ${levelColumnName}    ${treePathColumnName}    ${expectedColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量校验多行记录字段值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorAndExpectedData : 用来定位行及期望的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    levelColumnName : 层级所在列标题
+    ...
+    ...    treePathColumnName ：数组中层级路径所在的列名
+    ...
+    ...    expectedColumnNames ：期望的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndInputData} | Evaluate | [[u'序号',u'层级',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款1/工程合同款2',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    可编辑列表(AppGridE)(含树、复杂表头)字段值批量校验 | ${locatorAndInputData} | 预算分解内容 | 层级 | 款项类型&款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndExpectedData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${splitStr}    Evaluate    '^'
+    ${expectedColumnNamesAndValuesList}    ${treePathList}    _buildBatchInputVars_containRowNumberColumn    ${locatorAndExpectedData}    ${treePathColumnName}    ${expectedColumnNames}    ${rowFilterCondition}
+    ...    ${splitStr}
+    Return From Keyword If    '${expectedColumnNamesAndValuesList}'=='' or '${treePathList}'==''
+    ${treePathArr}    Evaluate    u'${treePathList}'.split('${splitStr}')
+    ${expectedColumnNamesAndValuesArr}    Evaluate    u'${expectedColumnNamesAndValuesList}'.split('${splitStr}')
+    ${rowCount}    Evaluate    len(${treePathArr})
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${treePath}    Evaluate    ${treePathArr}[${i}]
+    \    ${expectedColumnNamesAndValues}    Evaluate    ${expectedColumnNamesAndValuesArr}[${i}]
+    \    可编辑列表(AppGridE)(含树、复杂表头)字段值校验    ${levelColumnName}    ${treePath}    ${expectedColumnNamesAndValues}
+
+表单(AppForm)字段值校验
+    [Arguments]    ${fieldName}    ${expectedValue}
+    [Documentation]    *功能：*
+    ...
+    ...    表单字段值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    fieldName ：需要赋值的input控件的name属性
+    ...
+    ...    expectedValue ：期望值
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)字段值校验 | ContractName | 我的测试合同1
+    Return From Keyword If    '${expectedValue}' == '[NULL]'
+    ${cssClass}    Get Element Attribute    //input[@name='${fieldName}'] | //textarea[@name='${fieldName}']@className
+    run keyword if    '${cssClass}' == 'rad2'    _checkAppForm_radio    ${fieldName}    ${expectedValue}    ELSE IF    '${cssClass}' == 'lu'
+    ...    _checkAppForm_lu    ${fieldName}    ${expectedValue}    ELSE    _checkAppForm_txt    ${fieldName}
+    ...    ${expectedValue}
+
+表单(AppForm)字段值批量校验
+    [Arguments]    ${fieldNameList}    ${expectedValueList}
+    [Documentation]    *功能：*
+    ...
+    ...    表单字段值批量校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    fieldNameList ：需要批量校验的input控件的name属性，字段之间用|分割
+    ...
+    ...    expectedValueList ：期望值列表，值之间用|分割
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)字段值批量校验 | ContractName|HtType | 我的测试合同1|SS
+    ${fieldNameArr}    Evaluate    u'${fieldNameList}'.split('|')
+    ${expectedValueArr}    Evaluate    u'${expectedValueList}'.split('|')
+    ${fieldCount}    Evaluate    len(${fieldNameArr})
+    : FOR    ${i}    IN RANGE    ${fieldCount}
+    \    ${fieldName}    Evaluate    ${fieldNameArr}[${i}]
+    \    ${expectedValue}    Evaluate    ${expectedValueArr}[${i}]
+    \    表单(AppForm)字段值校验    ${fieldName}    ${expectedValue}
+
+表单(AppForm)字段只读校验
+    [Arguments]    ${fieldName}
+    [Documentation]    *功能：*
+    ...
+    ...    检查字段是否为只读
+    ...
+    ...    *参数说明：*
+    ...
+    ...    fieldName ：需要检查的控件的name属性
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)字段只读校验 | fieldName
+    ${isEditable}    Map_AppForm_检查字段是否可以编辑    ${fieldName}
+    Run Keyword And Continue On Failure    run keyword if    '${isEditable}' == '1'    fail    字段${fieldName}应为只读，实际为可编辑字段
+
+表单(AppForm)字段显示校验
+    [Arguments]    ${fieldName}
+    [Documentation]    *功能：*
+    ...
+    ...    检查字段是否为只读
+    ...
+    ...    *参数说明：*
+    ...
+    ...    fieldName ：需要检查的控件的name属性
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)字段显示校验 | fieldName
+    ${isShow}    Map_AppForm_检查字段是否显示    ${fieldName}
+    Run Keyword And Continue On Failure    run keyword if    '${isShow}' == '0'    fail    字段${fieldName}应显示，实际未显示
+
+表单(AppForm)字段隐藏校验
+    [Arguments]    ${fieldName}    ${expectedValue}
+    [Documentation]    *功能：*
+    ...
+    ...    检查字段是否为只读
+    ...
+    ...    *参数说明：*
+    ...
+    ...    fieldName ：需要检查的控件的name属性
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppForm_检查字段是否可以编辑 | ContractName
+    ${isShow}    Map_AppForm_检查字段是否显示    ${fieldName}
+    Run Keyword And Continue On Failure    run keyword if    '${isShow}' == '1'    fail    字段${fieldName}应隐藏，实际有显示
+
+表单(AppForm)横标签可见性校验
+    [Arguments]    ${tabName}    ${expectedValue}    ${errorMsg}=
+    [Documentation]    *功能：*
+    ...
+    ...    表单横标签可见性校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tabName ：横标签名称
+    ...
+    ...    expectedValue ：期望值(1：可见 0：不可见)
+    ...
+    ...    errorMsg：验证失败时提示的消息
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)横标签可见性校验 | 基本资料 | 1 | 横标签不可见
+    ${isShow}    Map_AppForm_检查横标签是否显示    ${tabName}
+    ${addResult}    Evaluate    int(${isShow})+int(${expectedValue})
+    ${errorMsg}    run keyword if    '${errorMsg}' == '' and '${isShow}' == '1'    Evaluate    u'横标签' + u'"${tabName}"' + u'可见'    ELSE IF    '${errorMsg}' == '' and '${isShow}' == '0'
+    ...    Evaluate    u'横标签' + u'"${tabName}"' + u'不可见'    ELSE IF    '${errorMsg}' \ != \ ''    Evaluate    u'${errorMsg}'
+    Run Keyword And Continue On Failure    run keyword if    ${addResult} == 1    fail    表单横标签可见性校验失败：${errorMsg}
+
+表单(AppForm)横标签可见性批量校验
+    [Arguments]    ${tabNameList}    ${expectedValueList}    ${errorMsgList}=
+    [Documentation]    *功能：*
+    ...
+    ...    表单横标签可见性批量校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tabNameList ：横标签名称集合，标签之间用|分割
+    ...
+    ...    expectedValueList ：期望值集合(1：可见 0：不可见)，期望值之间用|分割
+    ...
+    ...    errorMsgList：验证失败时提示的消息列表，消息之间用|分割
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)横标签可见性批量校验 | 基本资料|相关信息 | 1|0 | 基本资料不可见|相关信息可见
+    ${tabNameArr}    Evaluate    u'${tabNameList}'.split('|')
+    ${expectedValueArr}    Evaluate    u'${expectedValueList}'.split('|')
+    ${errorMsgArr}    run keyword if    '${errorMsgList}' != ''    Evaluate    u'${errorMsgList}'.split('|')
+    ${tabCount}    Evaluate    len(${tabNameArr})
+    : FOR    ${i}    IN RANGE    ${tabCount}
+    \    ${tabName}    Evaluate    ${tabNameArr}[${i}]
+    \    ${expectedValue}    Evaluate    ${expectedValueArr}[${i}]
+    \    ${errorMsg}    run keyword if    '${errorMsgList}' != ''    Evaluate    ${errorMsgArr}[${i}]    ELSE
+    \    ...    Evaluate    ''
+    \    表单(AppForm)横标签可见性校验    ${tabName}    ${expectedValue}    ${errorMsg}
+
+表单(AppForm)侧标签可见性校验
+    [Arguments]    ${leftBarName}    ${expectedValue}    ${errorMsg}=
+    [Documentation]    *功能：*
+    ...
+    ...    表单侧标签可见性校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    leftBarName ：侧标签名称
+    ...
+    ...    expectedValue ：期望值(1：可见 0：不可见)
+    ...
+    ...    errorMsg：验证失败时提示的消息
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)侧标签可见性校验 | 相关文档 | 1 | 侧标签不可见
+    ${isShow}    Map_AppForm_检查侧标签是否显示    ${leftBarName}
+    ${addResult}    Evaluate    int(${isShow})+int(${expectedValue})
+    ${errorMsg}    run keyword if    '${errorMsg}' == '' and '${isShow}' == '1'    Evaluate    u'侧标签' + u'"${leftBarName}"' + u'可见'    ELSE IF    '${errorMsg}' == '' and '${isShow}' == '0'
+    ...    Evaluate    u'侧标签' + u'"${leftBarName}"' + u'不可见'    ELSE IF    '${errorMsg}' \ != \ ''    Evaluate    u'${errorMsg}'
+    Run Keyword And Continue On Failure    run keyword if    ${addResult} == 1    fail    表单侧标签可见性校验失败：${errorMsg}
+
+表单(AppForm)侧标签可见性批量校验
+    [Arguments]    ${leftBarNameList}    ${expectedValueList}    ${errorMsgList}=
+    [Documentation]    *功能：*
+    ...
+    ...    表单侧标签可见性批量校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    leftBarNameList ：侧标签名称列表，标签之间用|分割
+    ...
+    ...    expectedValueList ：期望值(1：可见 0：不可见)，值之间用|分割
+    ...
+    ...    errorMsgList：验证失败时提示的消息，消息之间用|分割
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)侧标签可见性批量校验 | 相关文档|付款条件 | 1|1 | 相关文档侧标签不可见|付款条件不可见
+    ${leftBarNameArr}    Evaluate    u'${leftBarNameList}'.split('|')
+    ${expectedValueArr}    Evaluate    u'${expectedValueList}'.split('|')
+    ${errorMsgArr}    run keyword if    '${errorMsgList}' != ''    Evaluate    u'${errorMsgList}'.split('|')
+    ${leftBarCount}    Evaluate    len(${leftBarNameArr})
+    : FOR    ${i}    IN RANGE    ${leftBarCount}
+    \    ${leftBarName}    Evaluate    ${leftBarNameArr}[${i}]
+    \    ${expectedValue}    Evaluate    ${expectedValueArr}[${i}]
+    \    ${errorMsg}    run keyword if    '${errorMsgList}' != ''    Evaluate    ${errorMsgArr}[${i}]    ELSE
+    \    ...    Evaluate    ''
+    \    表单(AppForm)侧标签可见性校验    ${leftBarName}    ${expectedValue}    ${errorMsg}
+
+表单(AppForm)保存前后校验
+    [Arguments]    ${hasConfirm}=0    ${chooseYes}=1    ${exceptionFieldNameList}=
+    [Documentation]    *功能：*
+    ...
+    ...    表单保存前后各字段值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    hasConfirm：保存时是否会出现confirm对话框。1：会，0：不会。
+    ...
+    ...    chooseYes：对话框出现时是选择确定还是选择取消。1：确定，0：取消。
+    ...
+    ...    exceptionFieldNameList ：不需要校验的字段名列表，多个字段之间用|分割
+    ...
+    ...    *示例：*
+    ...
+    ...    表单(AppForm)保存前后校验 | 1 | 1 | ContractName
+    ${beforeDataXML}    Run Keyword And Ignore Error    Execute Javascript    appForm.BuildXml();return appForm.dataxml;
+    ${runStatus}    Evaluate    ${beforeDataXML}[0]
+    ${runResult}    run keyword if    '${runStatus}'=='PASS'    Evaluate    ${beforeDataXML}[1]
+    ${beforeDataXML}    run keyword if    '${runStatus}'=='PASS'    Evaluate    u'${runResult}'    ELSE    Evaluate
+    ...    u''
+    log    ${beforeDataXML}
+    run keyword if    '${hasConfirm}'=='1' and '${chooseYes}'=='1'    Choose Ok On Next Confirmation    ELSE IF    '${hasConfirm}'=='1' and '${chooseYes}'=='0'    Choose Cancel On Next Confirmation
+    Map_AppForm_点击命令按钮    保存
+    sleep    3s
+    run keyword if    '${hasConfirm}'=='1'    Wait Until Keyword Succeeds    10s    500ms    confirm action
+    ${afterDataXML}    Run Keyword And Ignore Error    Execute Javascript    appForm.BuildXml();return appForm.dataxml;
+    ${runStatus}    Evaluate    ${afterDataXML}[0]
+    ${runResult}    run keyword if    '${runStatus}'=='PASS'    Evaluate    ${afterDataXML}[1]
+    ${afterDataXML}    run keyword if    '${runStatus}'=='PASS'    Evaluate    u'${runResult}'    ELSE    Evaluate
+    ...    u''
+    log    ${afterDataXML}
+    Return From Keyword If    '${beforeDataXML}'=='' or '${afterDataXML}' == ''
+    ${checkResult}    Run Keyword And Ignore Error    Execute Javascript    function loadXML(xmlString){var xmlDoc=null;if(window.ActiveXObject){xmlDoc=new ActiveXObject('Microsoft.XMLDOM');}xmlDoc.loadXML(xmlString);return xmlDoc;}function isValueInArray(value,array){for(var i=0;i<array.length;i++){if(array[i]==value){return true;}}return false;}try{var beforeDataXML='${beforeDataXML}';var afterDataXML='${afterDataXML}';var exceptionFieldNameList='${exceptionFieldNameList}';var exceptionFieldNameArr=[];if(exceptionFieldNameList!=''){if(exceptionFieldNameList.indexOf('|')>-1){exceptionFieldNameArr=exceptionFieldNameList.split('|');}else{exceptionFieldNameArr.push(exceptionFieldNameList);}}var beforeXmlDoc=loadXML(beforeDataXML);var afterXmlDoc=loadXML(afterDataXML);var beforeRootNode=beforeXmlDoc.firstChild;var beforeRootNodeTagName=beforeRootNode.tagName;var beforeChildNodes=beforeRootNode.childNodes;var beforeChildNode,beforeChildNodeTagName,beforeChildNodeText,afterChildNode,afterChildNodeText;var checkResult='';for(var i=0;i<beforeChildNodes.length;i++){beforeChildNode=beforeChildNodes[i];beforeChildNodeTagName=beforeChildNode.tagName;beforeChildNodeText=beforeChildNode.text;if(exceptionFieldNameList!=''&&isValueInArray(beforeChildNodeTagName,exceptionFieldNameArr)){continue;}afterChildNode=afterXmlDoc.selectSingleNode(beforeRootNodeTagName+'/'+beforeChildNodeTagName);if(!afterChildNode){checkResult+='字段: '+beforeChildNodeTagName+' 保存前值为 '+beforeChildNodeText+' ,保存后值为空;';}else{afterChildNodeText=afterChildNode.text;if(afterChildNodeText!=beforeChildNodeText){checkResult+='字段: '+beforeChildNodeTagName+' 保存前值为 '+beforeChildNodeText+' ,保存后值为 '+afterChildNodeText+' ;';}}}if(checkResult!=''){checkResult='Appform保存前后字段值不一致！'+checkResult.substr(0,checkResult.length-1);}return checkResult;}catch(e){return '';}
+    ${runStatus}    Evaluate    ${checkResult}[0]
+    ${runResult}    run keyword if    '${runStatus}'=='PASS'    Evaluate    ${checkResult}[1]
+    ${checkResult}    run keyword if    '${runStatus}'=='PASS'    Evaluate    u'${runResult}'    ELSE    Evaluate
+    ...    u''
+    Run Keyword And Continue On Failure    run keyword if    '${checkResult}' != ''    fail    ${checkResult}
+
+可编辑列表(AppGridE)保存前后字段值校验
+    [Arguments]    ${exceptionFieldNameList}=
+    [Documentation]    *功能：*
+    ...
+    ...    AppGridE各字段值保存前后校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    exceptionFieldNameList ：不需要校验的字段名列表，多个字段之间用|分割
+    _myExecuteJS    var rightTitleTable=window.document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${currentIframe}    _getCurrentIframe
+    ${beforeDataXml}    Execute Javascript    return GetXml();
+    返回上级Iframe
+    Map_AppGridMenu_点击列表菜单项    保存
+    select frame    ${currentIframe}
+    ${afterDataXml}    Execute Javascript    return GetXml();
+    ${beforeDataXmlStartIndex}    Evaluate    u'''${beforeDataXml}'''.find('<RowData>')
+    ${beforeDataXmlEndIndex}    Evaluate    u'''${beforeDataXml}'''.find('</RowData>')
+    ${beforeDataRowXml}    Evaluate    u'''${beforeDataXml}'''[${beforeDataXmlStartIndex}:${beforeDataXmlEndIndex}] + '</RowData>'
+    ${afterDataXmlStartIndex}    Evaluate    u'''${afterDataXml}'''.find('<RowData>')
+    ${afterDataXmlEndIndex}    Evaluate    u'''${afterDataXml}'''.find('</RowData>')
+    ${afterDataRowXml}    Evaluate    u'''${afterDataXml}'''[${afterDataXmlStartIndex}:${afterDataXmlEndIndex}] + '</RowData>'
+    log    ${beforeDataRowXml}
+    log    ${afterDataRowXml}
+    ${checkResult}    Execute Javascript    function loadXML(xmlString){var xmlDoc=null;if(window.ActiveXObject){xmlDoc=new ActiveXObject('Microsoft.XMLDOM');}xmlDoc.loadXML(xmlString);return xmlDoc;}function isValueInArray(value,array){for(var i=0;i<array.length;i++){if(array[i]==value){return true;}}return false;}var beforeDataXML='${beforeDataRowXml}';var afterDataXML='${afterDataRowXml}';var exceptionFieldNameList='${exceptionFieldNameList}';var exceptionFieldNameArr=[];if(exceptionFieldNameList!=''){if(exceptionFieldNameList.indexOf('|')>-1){exceptionFieldNameArr=exceptionFieldNameList.split('|');}else{exceptionFieldNameArr.push(exceptionFieldNameList);}}var beforeXmlDoc=loadXML(beforeDataXML);var afterXmlDoc=loadXML(afterDataXML);var beforeRootNode=beforeXmlDoc.firstChild;var afterRootNode=afterXmlDoc.firstChild;var beforeChildNodes=beforeRootNode.childNodes;var afterChildNodes=afterRootNode.childNodes;var beforeChildNode,afterChildNode,beforeChildAttributes,afterChildAttributes,beforeChildAttrName,beforeChildAttrValue,afterChildAttrValue;var checkResult='';for(var i=0;i<afterChildNodes.length;i++){beforeChildNode=beforeChildNodes[i];afterChildNode=afterChildNodes[i];beforeChildAttributes=beforeChildNode.attributes;afterChildAttributes=afterChildNode.attributes;for(var j=0;j<beforeChildAttributes.length;j++){beforeChildAttrName=beforeChildAttributes[j].nodeName;if(beforeChildAttrName=='isnew'||beforeChildAttrName=='isupdate'||beforeChildAttrName.indexOf('__is')>-1){continue;}if(exceptionFieldNameList!=''&&isValueInArray(beforeChildAttrName,exceptionFieldNameArr)){continue;}beforeChildAttrValue=beforeChildAttributes[j].nodeValue;afterChildAttrValue=afterChildAttributes.getNamedItem(beforeChildAttrName).nodeValue;if(beforeChildAttrValue!=afterChildAttrValue){checkResult+='字段："'+beforeChildAttrName+'",'}}}if(checkResult!=''){checkResult=checkResult.substr(0,checkResult.length-1)+'在AppGridE保存前后字段值不一致！';}return checkResult;
+    Run Keyword And Continue On Failure    run keyword if    '${checkResult}' != ''    fail    ${checkResult}
+
+_checkAppForm_radio
+    [Arguments]    ${fieldName}    ${expectedValue}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    表单单选框字段值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    fieldName ：需要赋值的input控件的name属性
+    ...
+    ...    expectedValue ：期望的选项文本
+    ${fieldNameHidden}    Evaluate    u'${fieldName}'.replace('appForm_','')
+    ${actualValue}    Get Value    //input[@name='${fieldNameHidden}']
+    ${actualId}    Get Element Attribute    //input[@name='${fieldName}' and @value='${actualValue}']@id
+    ${actualText}    get text    //input[@id='${actualId}']/parent::td/following-sibling::td/label
+    ${expectedId}    Get Element Attribute    //input[@name='${fieldName}']/parent::td/following-sibling::td/label[text()='${expectedValue}']@for
+    Run Keyword And Continue On Failure    run keyword if    '${actualId}' != '${expectedId}'    fail    表单字段值验证失败！字段：${fieldName}，期望值：${expectedValue}，实际值：${actualText}
+
+_checkAppForm_txt
+    [Arguments]    ${fieldName}    ${expectedValue}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    表单文本框字段值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    fieldName ：需要赋值的input控件的name属性
+    ...
+    ...    expectedValue ：期望的文本
+    ${actualValue}    get value    //input[@name='${fieldName}'] | //textarea[@name='${fieldName}']
+    Run Keyword And Continue On Failure    run keyword if    '${actualValue}' != '${expectedValue}'    fail    表单字段值验证失败！字段：${fieldName}，期望值：${expectedValue}，实际值：${actualValue}
+
+_checkAppForm_lu
+    [Arguments]    ${fieldName}    ${expectedValue}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    表单文本框字段值校验
+    ...
+    ...    *参数说明：*
+    ...
+    ...    fieldName ：需要赋值的input控件的name属性
+    ...
+    ...    expectedValue ：期望的文本
+    ${actualValue}    get text    //input[@name='${fieldName}']/parent::td/preceding-sibling::td/div/span
+    Run Keyword And Continue On Failure    run keyword if    '${actualValue}' != '${expectedValue}'    fail    表单字段值验证失败！字段：${fieldName}，期望值：${expectedValue}，实际值：${actualValue}
+
+_checkTableCell
+    [Arguments]    ${tableId}    ${rowIndex}    ${columnIndex}    ${expectedValue}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    校验table内单元格内容
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId ：table元素的id
+    ...
+    ...    rowIndex ：单元格所在行索引
+    ...
+    ...    columnIndex：单元格所在列索引
+    ...
+    ...    expectedValue：期望值
+    ...
+    ...
+    ...    *返回值说明：*
+    ...
+    ...    CheckResult：PASS - 验证通过，FAILED - 验证失败
+    ${CheckResult}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var tableId='${tableId}';var rowIndex=${rowIndex};var columnIndex=${columnIndex};var expectedValue='${expectedValue}';var checkResult='';var table=window.document.getElementById(tableId);var cell=table.rows[rowIndex].cells[columnIndex];var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length>0){if(rp(inputs[0].value)==expectedValue){return'1|||PASS';}else{return'1|||期望值为"'+expectedValue+'",实际值为"'+inputs[0].value+'"';}}var selects=cell.getElementsByTagName('select');if(selects&&selects.length>0){var select=selects[0];var selectedText=select.options[select.selectedIndex].text;if(selectedText==expectedValue){return'1|||PASS';}else{return'1|||期望值为"'+expectedValue+'",实际值为"'+selectedText+'"';}}if(cell.innerText){if(rp(cell.innerText)==expectedValue){return'1|||PASS';}else{return'1|||期望值为"'+expectedValue+'",实际值为"'+cell.innerText+'"';}}var nobrs=cell.getElementsByTagName('nobr');if(nobrs&&nobrs.length>0){if(nobrs[0].innerText){if(rp(nobrs[0].innerText)==expectedValue){return'1|||PASS';}else{return'1|||期望值为"'+expectedValue+'",实际值为"'+nobrs[0].innerText+'"';}}}var spans=cell.getElementsByTagName('span');if(spans&&spans.length>0){for(var i=0;i<spans.length;i++){if(spans[i].innerText){if(rp(spans[i].innerText)==expectedValue){return'1|||PASS';}else if(spans[i].innerText!=''){return'1|||期望值为"'+expectedValue+'",实际值为"'+spans[i].innerText+'"';}}}}if(expectedValue==''){return'1|||PASS';}else{return'1|||期望值为"'+expectedValue+'",实际值为"'+'"';}
+    [Return]    ${CheckResult}

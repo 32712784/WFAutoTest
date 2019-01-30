@@ -1,0 +1,79 @@
+*** Settings ***
+Resource          ../../关键字封装/资源文件/通用封装(all_included).txt
+Library           Selenium2Library
+
+*** Keywords ***
+通过桌面打开待办消息
+    [Arguments]    ${ProcessName}
+    点击桌面【待办事项】
+    选择待办消息    ${ProcessName}
+
+点击桌面【待办事项】
+    Wait Until Keyword Succeeds    10s    500ms    Select Window    url=%Index.aspx%
+    select frame    loc
+    Click Element    xpath=//a/img[@alt="我的桌面"]
+    Unselect Frame
+    #判断待操作的部件在我的桌面是否显示（我的桌面中是否有定义）
+    Select Frame    stage1
+    ${local_WebPartIsVisible}=    Run Keyword And Return Status    Element Should Be Visible    xpath=//td[contains(text(), '我的待办事宜')]
+    Run Keyword If    '${local_WebPartIsVisible}'=='False'    Fail    "我的桌面中未设置该部件"
+    Return From Keyword If    '${local_WebPartIsVisible}'=='False'
+    #判断部件是否展开，如未展开，则点击展开部件
+    ${local_ImgIsVisible}=    Run Keyword And Return Status    Element Should Be Visible    xpath=//td[contains(text(), '我的待办事宜')]/following-sibling::td/img[@src='/images/index_arrow_down.gif']
+    Run Keyword If    '${local_ImgIsVisible}'=='True'    Click Element    xpath=//td[contains(text(), '我的待办事宜')]/following-sibling::td/img[@src='/images/index_arrow_down.gif']
+    unselect frame
+    #点击待办事项链接
+    Wait Until Keyword Succeeds    10s    500ms    Select Window    title=明源地产ERP
+    Select Frame    stage1
+    Assign Id To Element    //iframe[@src='/WebPart/Wake/Desk_MyPendingWork.aspx']    myTempFrameId
+    select frame    myTempFrameId
+    click element    xpath=//a[text()="待办事项"]
+    unselect frame
+
+选择待办消息
+    [Arguments]    ${ProcessName}
+    Wait Until Keyword Succeeds    10s    500ms    Select Window    title=明源地产ERP
+    select frame    stage1/ifrmWake
+    Select From List By Value    __appFind_field    WakeSubject
+    Input Text    __appFind_textbox    ${ProcessName}
+    click button    xpath=//button[text()="查找"]
+    select frame    appGrid
+    Map_AppGrid_双击行    模式=待办
+    unselect frame
+
+点击桌面部件的更多关注
+    [Arguments]    ${WebParttitle}    ${IframeSrcValue}
+    [Documentation]    *功能：*
+    ...
+    ...    通过“我的桌面”的桌面部件的“更多关注”的链接打开对应功能
+    ...
+    ...    *参数说明*
+    ...
+    ...    ${WebParttitle}：部件Title，如公告、我的待办流程
+    ...
+    ...    ${IframeSrcValue}：部件的更多关注超链接所在的IFrame的Src属性的值，如：/MyWorkflow/WF_Desktop_MyActiveProcess.aspx
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    点击桌面部件的更多关注 \ \ 我的待办流程 \ \ /MyWorkflow/WF_Desktop_MyActiveProcess.aspx
+    Wait Until Keyword Succeeds    10s    500ms    Select Window    url=%Index.aspx%
+    select frame    loc
+    Click Element    xpath=//a/img[@alt="我的桌面"]
+    Unselect Frame
+    #判断待操作的部件在我的桌面是否显示（我的桌面中是否有定义）
+    Select Frame    stage1
+    ${local_WebPartIsVisible}=    Run Keyword And Return Status    Element Should Be Visible    xpath=//td[contains(text(), '${WebParttitle}')]
+    Run Keyword If    '${local_WebPartIsVisible}'=='False'    Log    "我的桌面中未设置该部件"
+    Return From Keyword If    '${local_WebPartIsVisible}'=='False'
+    #判断部件是否展开，如未展开，则点击展开部件
+    ${local_ImgIsVisible}=    Run Keyword And Return Status    Element Should Be Visible    xpath=//td[contains(text(), '${WebParttitle}')]/following-sibling::td/img[@src='/images/index_arrow_down.gif']
+    Run Keyword If    '${local_ImgIsVisible}'=='True'    Click Element    xpath=//td[contains(text(), '${WebParttitle}')]/following-sibling::td/img[@src='/images/index_arrow_down.gif']
+    unselect frame
+    #点击待办事项链接
+    Wait Until Keyword Succeeds    10s    500ms    Select Window    url=%Index.aspx%
+    Select Frame    stage1
+    Assign Id To Element    //iframe[@src='${IframeSrcValue}']    myTempFrameId
+    select frame    myTempFrameId
+    click element    xpath=//a[text()="更多关注..."]
+    unselect frame

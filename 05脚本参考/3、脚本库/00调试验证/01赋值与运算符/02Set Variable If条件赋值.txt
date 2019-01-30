@@ -1,0 +1,24 @@
+*** Settings ***
+Documentation     分支的结构如下：
+...               Run keyword if 条件1 do action1
+...               ... ELSE IF 条件2 do action2
+...               <... ELSE IF 条件X do action X >
+...               ... ELSE do action N
+
+*** Test Cases ***
+按条件赋值_单条件
+    #依据条件差异化赋值
+    ${rc}    Set Variable    0
+    #条件满足，赋条件后面的第1个参数值，不满足，赋第2个参数值
+    ${Var1}    Set Variable If    ${rc}==0    zero    nonzero    #zero
+    ${Var2}    Set Variable If    ${rc}>0    VALUE1    VALUE2    #VALUE2
+    #条件不满足时，如果不满足条件的参数缺少，则赋值结果为None
+    ${Var3}    Set Variable If    ${rc}>0    WHATEVER    #None
+
+按条件赋值_case分支
+    ${rc}    Set Variable    1
+    #两个分支
+    ${var1} =    Set Variable If    ${rc} == 0    zero    ${rc} > 0    greater than zero    less then zero
+    #case
+    ${var2} =    Set Variable If    ${rc} == 0    zero    ${rc} == 1    one    ${rc} == 2
+    ...    two    ${rc} > 2    greater than two    ${rc} < 0    less than zero

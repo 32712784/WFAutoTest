@@ -1,0 +1,21 @@
+*** Settings ***
+Resource          ../内置库引用.txt
+
+*** Test Cases ***
+element should contain
+    #验证元素被定位器包含文本预期 | expected 表示期望值的locator | Message 表示你想要的消息
+    Element Should Contain
+    Element Should Be Disabled
+    Element Text Should Be
+
+Element Should Be Visible
+    #验证元素是被定位器可见的
+    Element Should Be Visible
+    Element Should Not Be Visible
+    Element Should Be Enabled
+
+Element Should Be Disabled
+
+Element Should Be Enabled
+
+Element Text Should Be

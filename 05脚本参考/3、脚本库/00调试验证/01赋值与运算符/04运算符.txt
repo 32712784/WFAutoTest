@@ -1,0 +1,22 @@
+*** Test Cases ***
+运算符
+    ${a}    Evaluate    'aaa/bbb/ccc/ddd'.replace('/','-')
+    log    ${a}
+    ${a}    Evaluate    2+3    #加法
+    ${a}    Evaluate    2-3    #减法
+    ${a}    Evaluate    2*3    #乘法
+    ${a}    Evaluate    format(2/3,'.2f')    #取整运算
+    ${a}    Evaluate    format(2.0/3.0,'.2f')    #浮点运算
+    ${a}    Evaluate    2==2 and 3==0    #逻辑与
+    ${a}    Evaluate    2==2 or 3==0    #逻辑或
+    ${a}    Evaluate    2!=0    #不等于比较
+    ${a}    Evaluate    2>0    #大于比较
+    ${a}    Evaluate    2<0    #小于比较
+    ${I}    Set Variable    '123456'
+    ${J}    Set Variable    '1234567'
+    ${a}    Evaluate    2 is 2    #比较对象
+    ${a}    Evaluate    ${I} is ${J}    #是同一个对象比较
+    ${a}    Evaluate    ${I} is not ${J}    #不是同一个对象比较
+    ${a}    Evaluate    ${I} in ${J}    #${I}被包含在${J}中
+    ${a}    Evaluate    ${I} not in ${J}    #${I}不被包含在${J}中
+    log    ${a}

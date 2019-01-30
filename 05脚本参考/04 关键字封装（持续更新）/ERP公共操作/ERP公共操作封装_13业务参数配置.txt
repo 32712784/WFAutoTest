@@ -1,0 +1,154 @@
+*** Settings ***
+Resource          ../../关键字封装/资源文件/通用封装(all_included).txt
+Library           Selenium2Library
+
+*** Keywords ***
+配置类参数设置
+    [Arguments]    ${Scope}    ${PZParamName}    ${Paramvalue}    ${projectNamePath}=${EMPTY}
+    [Documentation]    *功能：*
+    ...
+    ...    设置各业务系统的配置类参数选项值，并保存，包含打开配置类业务参数的链接
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ${Scope} ： 参数范围，为：集团级、公司级、项目级
+    ...    ${PZParamName}：待配置参数的参数Name，通过工具获取
+    ...    ${Paramvalue}：待配置参数的参数值
+    ...    ${projectNamePath}：当参数范围为项目级时，需要填写应用项目范围：下拉树路径，父路径与子路径之间用/分割
+    ...
+    ...    示例：
+    ...    配置类参数选项设定 | 公司级 | cb_EnableHtSP | 工作流审批
+    点击业务参数链接    配置类参数设定
+    配置类参数选项设定    ${Scope}    ${PZParamName}    ${Paramvalue}    ${projectNamePath}
+
+点击业务参数链接
+    [Arguments]    ${paramName}
+    [Documentation]    *功能：*
+    ...
+    ...    业务参数设置模块，点击某个业务参数设置的链接
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ${ParamName}：业务参数链接的名称
+    ...
+    ...
+    ...    示例：
+    ...    点击业务参数链接 \ 配置类参数设定
+    定位页面    url=%Index.aspx%
+    Select Frame    stage1
+    Click Element    xpath=//div[@id='paramTarget'] //div[text()='${paramName}']
+    Unselect Frame
+
+配置类参数选项设定
+    [Arguments]    ${Scope}    ${PZParamName}    ${Paramvalue}    ${projectNamePath}
+    [Documentation]    *功能：*
+    ...
+    ...    设置各业务系统的配置类参数选项值，并保存
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ${Scope} ： 参数范围，为：集团级、公司级、项目级
+    ...    ${PZParamName}：待配置参数的参数Name，通过工具获取
+    ...    ${Paramvalue}：待配置参数的参数值
+    ...    ${projectNamePath}：当参数范围为项目级时，需要填写应用项目范围：下拉树路径，父路径与子路径之间用/分割
+    ...
+    ...    示例：
+    ...    配置类参数选项设定 | 公司级 | cb_EnableHtSP | 工作流审批 | ${EMPTY}
+    定位页面    url=%Index.aspx%
+    select Frame    stage1
+    Click Element    xpath=//label[text()='${Scope}']    #选择参数范围：集团级、公司级、项目级
+    #判断如果是项目级参数，需要先设置应用项目
+    Run Keyword If    '${Scope}'=='项目级'    Map_ProjDDTree_设置下拉选项    ${projectNamePath}
+    #设置某个配置类参数选项的值
+    Unselect Frame    #如果是项目级参数，调用选择项目的关键字后，必须退出FRAME再重新进，否则找不到下面的对象，具体原因待查，与关键字封装有关
+    select Frame    stage1
+    ${local_exit}    Run Keyword And Return Status    Element Should Be Visible    Xpath=//table[@id='${PZParamName}']//label[text()='${Paramvalue}']
+    log    ${local_exit}
+    Click Element    Xpath=//table[@id='${PZParamName}']//label[text()='${Paramvalue}']    #设置选项
+    Click Element    Xpath=//table[@id='AppGridMenu1']//span[text()='保存']    #点击保存
+    unselect Frame
+
+配置类参数设置（sl）
+    [Arguments]    ${Scope}    ${Paramvalue}    ${projectNamePath}=${EMPTY}
+    [Documentation]    *功能：*
+    ...
+    ...    设置各业务系统的配置类参数选项值，并保存，包含打开配置类业务参数的链接--
+    ...    同时设置“销售变更审批设置”
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ${Scope} ： 参数范围，为：集团级、公司级、项目级
+    ...    ${PZParamName}：待配置参数的参数Name，通过工具获取
+    ...    ${Paramvalue}：待配置参数的参数值
+    ...    ${projectNamePath}：当参数范围为项目级时，需要填写应用项目范围：下拉树路径，父路径与子路径之间用/分割
+    ...
+    ...    示例：
+    ...    配置类参数选项设定 | 公司级 | cb_EnableHtSP | 工作流审批
+    点击业务参数链接    配置类参数设定
+    配置类参数选项设定（sl）    ${Scope}    s_EnableBgjgSh    s_EnableTfSh    s_EnableHfSh    s_EnableZjqyrSh    ${Paramvalue}
+    ...    ${projectNamePath}
+
+配置类参数选项设定（sl）
+    [Arguments]    ${Scope}    ${PZParamName1}    ${PZParamName2}    ${PZParamName3}    ${PZParamName4}    ${Paramvalue}
+    ...    ${projectNamePath}
+    [Documentation]    *功能：*
+    ...
+    ...    设置各业务系统的配置类参数选项值，并保存--同时设置“销售变更审批设置”
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ${Scope} ： 参数范围，为：集团级、公司级、项目级
+    ...    ${PZParamName}：待配置参数的参数Name，通过工具获取
+    ...    ${Paramvalue}：待配置参数的参数值
+    ...    ${projectNamePath}：当参数范围为项目级时，需要填写应用项目范围：下拉树路径，父路径与子路径之间用/分割
+    ...
+    ...    示例：
+    ...    配置类参数选项设定 | 公司级 | cb_EnableHtSP | 工作流审批 | ${EMPTY}
+    定位页面    url=%Index.aspx%
+    select Frame    stage1
+    Click Element    xpath=//label[text()='${Scope}']    #选择参数范围：集团级、公司级、项目级
+    #判断如果是项目级参数，需要先设置应用项目
+    Run Keyword If    '${Scope}'=='项目级'    Map_ProjDDTree_设置下拉选项    ${projectNamePath}
+    #设置某个配置类参数选项的值
+    Unselect Frame    #如果是项目级参数，调用选择项目的关键字后，必须退出FRAME再重新进，否则找不到下面的对象，具体原因待查，与关键字封装有关
+    select Frame    stage1
+    Click Element    Xpath=//table[@id='${PZParamName1}']//label[text()='${Paramvalue}']    #设置选项1
+    Click Element    Xpath=//table[@id='${PZParamName2}']//label[text()='${Paramvalue}']    #设置选项2
+    Click Element    Xpath=//table[@id='${PZParamName3}']//label[text()='${Paramvalue}']    #设置选项3
+    Click Element    Xpath=//table[@id='${PZParamName4}']//label[text()='${Paramvalue}']    #设置选项4
+    Click Element    Xpath=//table[@id='AppGridMenu1']//span[text()='保存']    #点击保存
+    unselect Frame
+
+配置类参数设置_DB
+    [Arguments]    ${ParamValue}    ${ScopeGUID}    ${ParamName}
+    [Documentation]    **参数说明**
+    ...    ----------------------------------------------------------------------------------
+    ...    **${ParamValue}**
+    ...
+    ...    业务参数中的选项值：
+    ...
+    ...    1、如：否=0，是=1；
+    ...    2、如：工作流审批=1，线下审批=0；【2个选择按钮的分别为0、1】
+    ...    3、如：按合同=0，按个人=1，按部门=2；【三个选择按钮的分别为0、1、2】
+    ...
+    ...    如何看选项值？右键工具在选项上右键单击，看value框中的值；或者F12在dom树中找到此元素看value属性；
+    ...
+    ...    **${ScopeGUID}**
+    ...
+    ...    业务参数中的集团级、公司级、项目级选项值：
+    ...
+    ...    1、集团级：传集团的GUID
+    ...    2、公司级：传当前公司的GUID
+    ...    3、项目级：传当前项目的GUID
+    ...
+    ...    **${ParamName}**
+    ...
+    ...    业务参数中某个要设置的参数在dom数中的Name值：
+    ...
+    ...    1、如：【合同审批模式】在界面上看到的是中文，在dom数中是：cb_EnableHtSP
+    ...
+    ...    如何看Name值？右键工具在【合同审批模式】的选项：工作流审批或线下审批上单击右键，看Name框中的值；或者F12在dom树中找到此元素看Name属性；
+    Connect To Database Using Custom Params    adodbapi    "Provider=MSDASQL;Driver={SQL Server};Server=${DBrestore[0]};Database=${DBrestore[1]};UID=${DBrestore[2]} ;PWD=${DBrestore[3]};"
+    ${DB}    Evaluate    '[' +'${DBrestore[1]}' + ']'
+    Execute Sql String    USE ${DB};UPDATE myBizParamOption SET ParamValue='${ParamValue}' \ WHERE ScopeGUID='${ScopeGUID}' AND ParamName='${ParamName}';
+    Disconnect From Database

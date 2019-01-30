@@ -1,0 +1,320 @@
+﻿*** Settings ***
+Library           Selenium2Library
+Resource          通用工具方法.txt
+
+*** Keywords ***
+Map_AppGridE(含树、复杂表头)_选中行
+    [Arguments]    ${levelColumnName}    ${treePath}
+    [Documentation]    *功能：*
+    ...
+    ...    逐级展开列表树层级，并选中末级行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    levelColumnName: 树形层级所在列名(多行标头用|分割)；如果没有列名，传入${EMPTY}
+    ...
+    ...    treePath: 层次路径，父级与子级之间用"/"分割
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE(含树、复杂表头)_选中行 \ | 土地版|目标成本 | 中间科目/公司库存采购合同/库存水泥
+    Return From Keyword If    '${treePath}'=='' or '${treePath}'=='NULL'
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    _map_AppGridE(含树、复杂表头)_ExpandGridTreeAndAction    ${levelColumnName}    ${treePath}    1
+
+Map_AppGridE(含树、复杂表头)_批量选中多行
+    [Arguments]    ${levelColumnName}    ${treePathList}
+    [Documentation]    *功能：*
+    ...
+    ...    批量 逐级展开列表树层级，并选中末级行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    levelColumnName: 树形层级所在列名(多行标头用|分割)
+    ...
+    ...    treePathList: 层次路径列表，父级与子级之间用"/"分割；路径之间用|分割
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE(含树、复杂表头)_批量选中多行 | 成本科目 | 中间科目/公司库存采购合同/库存水泥|中间科目/公司库存采购合同/库存钢筋
+    Return From Keyword If    '${treePathList}'=='' or '${treePathList}'=='[NULL]'
+    ${treePathArr}    Evaluate    u'${treePathList}'.split('|')
+    ${treePathArrLen}    Evaluate    len(${treePathArr})
+    : FOR    ${i}    IN RANGE    ${treePathArrLen}
+    \    ${treePath}    Evaluate    ${treePathArr}[${i}]
+    \    Map_AppGridE(含树、复杂表头)_选中行    ${levelColumnName}    ${treePath}
+
+Map_AppGridE(含树、复杂表头)_双击行
+    [Arguments]    ${levelColumnName}    ${treePath}
+    [Documentation]    *功能：*
+    ...
+    ...    逐级展开列表树层级，并双击末级行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    levelColumnName: 树形层级所在列名(多行标头用|分割)；如果没有列名，传入${EMPTY}
+    ...
+    ...    treePath: 层次路径，父级与子级之间用"/"分割
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE(含树、复杂表头)_双击行 \ | \ 土地版|目标成本 | 中间科目/公司库存采购合同/库存水泥
+    Return From Keyword If    '${treePath}'=='' or '${treePath}'=='NULL'
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    _map_AppGridE(含树、复杂表头)_ExpandGridTreeAndAction    ${levelColumnName}    ${treePath}    2
+
+Map_AppGridE(含树、复杂表头)_编辑行
+    [Arguments]    ${levelColumnName}    ${treePath}    ${inputColumnNamesAndValues}
+    [Documentation]    *功能：*
+    ...
+    ...    编辑树型列表某一行的值
+    ...
+    ...    *参数说明：*
+    ...
+    ...    levelColumnName : 层级所在列名
+    ...
+    ...    treePath ：要展开的树节点路径，节点之间用/分割
+    ...
+    ...    inputColumnNamesAndValues ： 要编辑的字段名称(列标头)和对应的值，格式为: column1=value1&column2=value2，多行表头用|分割；如果列名中包含=，请用*eq*代替
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE(含树、复杂表头)_编辑行 | 预算分解内容 | 浦江新城-浦江新城/车位/回款金额/预计签约回款 | 2014-01|预算=1200
+    Return From Keyword If    '${inputColumnNamesAndValues}'=='' or '${inputColumnNamesAndValues}'=='NULL'
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    Map_AppGridE(含树、复杂表头)_选中行    ${levelColumnName}    ${treePath}
+    ${splitStr}    Set Variable    ^
+    ${columnNames}    ${values}    _parseQueryStringToSplitString    ${inputColumnNamesAndValues}    ${splitStr}
+    ${columnNameArr}    evaluate    u'${columnNames}'.split('${splitStr}')
+    ${valueArr}    evaluate    u'${values}'.split('${splitStr}')
+    ${columnCount}    evaluate    len(${columnNameArr})
+    : FOR    ${i}    IN RANGE    ${columnCount}
+    \    ${tableId}    ${rowIndex}    ${columnIndex}    _getCellLocation_AppGridE(含树、复杂表头)    ${columnNameArr[${i}]}
+    \    ${isEditable}    _checkTabelCellIsEditable    ${tableId}    ${rowIndex}    ${columnIndex}
+    \    run keyword if    '${isEditable}' == '0'    fail    第${rowIndex}行，第${columnIndex}列不能编辑
+    \    _myExecuteJS    var tableId='${tableId}';var rowIndex='${rowIndex}';var columnIndex='${columnIndex}';var value='${valueArr[${i}]}';var cell=window.document.getElementById(tableId).rows[rowIndex].cells[columnIndex];var inputs=cell.getElementsByTagName('input');if(inputs&&inputs.length>0){var Css = document.defaultView.getComputedStyle(inputs[0], null);if (Css.display != "none") {inputs[0].focus();inputs[0].value=value;inputs[0].fireEvent('onblur');inputs[0].fireEvent('onbeforedeactivate');return;}}var selects=cell.getElementsByTagName('select');if(selects&&selects.length>0){var Css = document.defaultView.getComputedStyle(selects[0], null);if (Css.display != "none") {var options=selects[0].getElementsByTagName('option');for(var i=0;i<options.length;i++){if(options[i].innerText==value){options[i].selected=true;selects[0].fireEvent('onchange');return;}}}return'0|||封装提示信息：该下拉框不存在文本为"'+value+'"的选项，请检查参数是否正确';}
+
+Map_AppGridE(含树、复杂表头)_批量编辑多行
+    [Arguments]    ${locatorAndInputData}    ${levelColumnName}    ${treePathColumnName}    ${inputColumnNames}    ${rowFilterCondition}=
+    [Documentation]    *功能：*
+    ...
+    ...    批量编辑多行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locatorAndInputData : 用来定位行及要输入的数据，是一个二维数组，数组的第一个元素是列头集合,其他元素为数据行。格式如下：
+    ...
+    ...    [['columnA','columnB','columnC','columnD'],[23,'aa','bb',100],[55,'cc','dd',200]]
+    ...
+    ...    levelColumnName : 层级所在列标题
+    ...
+    ...    treePathColumnName ：数组中层级路径所在的列名
+    ...
+    ...    inputColumnNames ：需要输入值的列头集合，列与列之间用&连接，如columnC&columnD
+    ...
+    ...    rowFilterCondition：过滤数据记录条件，格式为 columnA=value1&columnB=value2；默认值为空，表示所有数据行。
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    ${locatorAndInputData} | Evaluate | [[u'序号',u'层级',u'款项名称',u'计划付款金额',u'计划付款日期',u'付款说明'],[1,u'工程合同款1/工程合同款2',u'进度款',1234,u'2014-09-28',u'说明说明111'],[2,u'应扣款',u'代付代扣款',4567.89,u'2014-10-22',u'说明说明322']]
+    ...
+    ...    Map_AppGridE(含树、复杂表头)_批量编辑多行 | ${locatorAndInputData} | 预算分解内容 | 层级 | 款项类型&款项名称&计划付款金额&计划付款日期&付款说明
+    ${isContainData}    _checkTwoDimensionArrayContainsData    ${locatorAndInputData}
+    Return From Keyword If    '${isContainData}' == '0'
+    ${splitStr}    Evaluate    '^'
+    ${inputColumnNamesAndValuesList}    ${treePathList}    _buildBatchInputVars_containRowNumberColumn    ${locatorAndInputData}    ${treePathColumnName}    ${inputColumnNames}    ${rowFilterCondition}
+    ...    ${splitStr}
+    Return From Keyword If    '${inputColumnNamesAndValuesList}'=='' or '${treePathList}' == ''
+    ${treePathArr}    Evaluate    u'${treePathList}'.split('${splitStr}')
+    ${inputColumnNamesAndValuesArr}    Evaluate    u'${inputColumnNamesAndValuesList}'.split('${splitStr}')
+    ${rowCount}    Evaluate    len(${treePathArr})
+    : FOR    ${i}    IN RANGE    ${rowCount}
+    \    ${treePath}    Evaluate    ${treePathArr}[${i}]
+    \    ${inputColumnNamesAndValues}    Evaluate    ${inputColumnNamesAndValuesArr}[${i}]
+    \    Map_AppGridE(含树、复杂表头)_编辑行    ${levelColumnName}    ${treePath}    ${inputColumnNamesAndValues}
+
+Map_AppGridE(含树、复杂表头)_获取单元格地址
+    [Arguments]    ${levelColumnName}    ${treePath}    ${targetColumnName}
+    [Documentation]    *功能：*
+    ...
+    ...    获取指定单元格的地址
+    ...
+    ...    *参数说明：*
+    ...
+    ...    levelColumnName : 层级所在列名
+    ...
+    ...    treePath : 逐级展开的层次路径
+    ...
+    ...    targetColumnName : 目标列名(多行列头用|分割)
+    ...
+    ...    *返回值：*
+    ...
+    ...    tableId : 单元格所在Tabel元素Id
+    ...
+    ...    rowIndex ：单元格所在行索引
+    ...
+    ...    columnIndex：单元格所在列索引
+    ...
+    ...    *示例：*
+    ...
+    ...    ${tableId} ${rowIndex} ${columnIndex} Map_AppGridE(含树、复杂表头)_获取单元格地址 | 科目名称 | 项目成本(A)/开发成本(A.01)/土地费(A.01.01)/土地取得价款(A.01.01.01)/土地取得价款 | 待发生合约规划|D
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    _map_AppGridE(含树、复杂表头)_ExpandGridTreeAndAction    ${levelColumnName}    ${treePath}    1
+    ${tableId}    ${rowIndex}    ${columnIndex}    _getCellLocation_AppGridE(含树、复杂表头)    ${targetColumnName}
+    [Return]    ${tableId}    ${rowIndex}    ${columnIndex}
+
+Map_AppGridE(含树、复杂表头)_点击单元格内链接
+    [Arguments]    ${levelColumnName}    ${treePath}    ${targetColumnName}    ${linkText}
+    [Documentation]    *功能：*
+    ...
+    ...    点击指定单元格内的链接
+    ...
+    ...    *参数说明：*
+    ...
+    ...    levelColumnName : 层级所在列名
+    ...
+    ...    treePath : 逐级展开的层次路径
+    ...
+    ...    targetColumnName : 目标列名(多行列头用|分割)
+    ...
+    ...    linkText ： 链接文本
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_AppGridE(含树、复杂表头)_点击单元格链接 | 科目名称 | 项目成本(A)/开发成本(A.01)/土地费(A.01.01)/土地取得价款(A.01.01.01)/土地取得价款 | 待发生合约规划|D | 详细
+    Return From Keyword If    '${targetColumnName}'==''
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${tableId}    ${rowIndex}    ${columnIndex}    Map_AppGridE(含树、复杂表头)_获取单元格地址    ${levelColumnName}    ${treePath}    ${targetColumnName}
+    click element    //table[@id='${tableId}']//tr[${rowIndex}+1]/td[${columnIndex}+1]//*[text()='${linkText}']
+
+Map_AppGridE(含树、复杂表头)_点击单元格内图片
+    [Arguments]    ${levelColumnName}    ${treePath}    ${imgColumnName}    ${value}=1
+    [Documentation]    *功能：*
+    ...
+    ...    点击某一行中某一列的图片
+    ...
+    ...    *参数说明：*
+    ...
+    ...    levelColumnName : 层级所在列名
+    ...
+    ...    treePath : 逐级展开的层次路径
+    ...
+    ...    imgColumnName ：图片所在列名
+    ...
+    ...    value : 数据驱动参数，为空则不点击
+    ...
+    ...    *返回值说明：*
+    ...
+    ...    needNext：是否执行下一步
+    ...
+    ...    *示例：*
+    ...
+    ...    ${needNext} | Map_AppGridE(含树、复杂表头)_点击单元格内图片 | 科目名称 | 项目成本(A)/开发成本(A.01)/土地费(A.01.01)/土地取得价款(A.01.01.01)/土地取得价款 | 待发生合约规划
+    ${needNext}    run keyword if    '${value}'==''    Evaluate    0    ELSE    Evaluate
+    ...    1
+    Return From Keyword If    'value'==''    ${needNext}
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${tableId}    ${rowIndex}    ${columnIndex}    Map_AppGridE(含树、复杂表头)_获取单元格地址    ${levelColumnName}    ${treePath}    ${imgColumnName}
+    ${disabled}    Get Element Attribute    //table[@id='${tableId}']//tr[${rowIndex}+1]/td[${columnIndex}+1]//img@disabled
+    Run Keyword And Continue On Failure    run keyword if    '${disabled}'=='disabled' or '${disabled}'=='true'    fail    列${imgColumnName}内的图片禁用，无法点击
+    Return From Keyword If    '${disabled}'=='disabled' or '${disabled}'=='true'    0
+    click element    //table[@id='${tableId}']//tr[${rowIndex}+1]/td[${columnIndex}+1]//img
+    Return From Keyword    1
+    [Return]    ${needNext}
+
+_map_AppGridE(含树、复杂表头)_ExpandGridTreeAndAction
+    [Arguments]    ${levelColumnName}    ${treePath}    ${action}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    逐级展开列表树，并执行指定的操作
+    ...
+    ...    *参数说明：*
+    ...
+    ...    levelColumnName : 树形层级所在列名(多行标头用|分割)；如果没有列名，传入${EMPTY}
+    ...
+    ...    treePath : 逐级展开的层次路径
+    ...
+    ...    action ：执行的动作： 1 - 单击， 2 - 双击
+    _myExecuteJS    var rightTitleTable=document.getElementById('AppGridE_RightTitleDiv');if(!rightTitleTable){return'0|||封装提示信息：未找到id为"AppGridE_RightTitleDiv"的DIV元素，请检查是否进入了正确的iframe或者使用了正确的关键字';}
+    ${pathArr}    Evaluate    u'${treePath}'.split('/')
+    ${pathArrLen}    Evaluate    len(${pathArr})
+    ${j}    Evaluate    int(${pathArrLen})-1
+    ${tableLocation}    ${columnIndex}    _getColumnLocation_AppGridE(含树、复杂表头)    ${levelColumnName}
+    ${dataDivId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    'AppGridE_LeftDataDiv'    ELSE IF    '${tableLocation}' == 'Right'
+    ...    Evaluate    'AppGridE_RightDataDiv'
+    ${divId}    Evaluate    '_divAGEContent'
+    _myExecuteJS    var dataDivId='${dataDivId}';var columnIndex=${columnIndex};var table=window.document.getElementById(dataDivId).getElementsByTagName('table')[0];for(var i=0;i<table.rows.length;i++){var spans=table.rows[i].cells[columnIndex].getElementsByTagName('span');for(var j=0;j<spans.length;j++){if(spans[j].innerText && spans[j].innerText=='[-]'){spans[j].click();}}}
+    : FOR    ${i}    IN RANGE    ${pathArrLen}
+    \    Run Keyword If    ${i} < ${j}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var dataDivId='${dataDivId}';var columnIndex=${columnIndex};var path='${pathArr[${i}]}';var table=window.document.getElementById(dataDivId).firstChild;for(var i=0;i<table.rows.length;i++){if(table.rows[i].style&&table.rows[i].style.display=='none'){continue;}if(table.rows[i].cells[columnIndex].innerText&&rp(table.rows[i].cells[columnIndex].innerText)=='[+]'+path){var spans=table.rows[i].cells[columnIndex].getElementsByTagName('span');for(var j=0;j<spans.length;j++){if(spans[j].innerText&&rp(spans[j].innerText)=='[+]'){spans[j].click();return;}}}}return'0|||封装提示信息：未找到节点"'+path+'"，请检查参数是否正确';    ELSE    _myExecuteJS
+    \    ...    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};function selectCheckbox(appGridE_SelectedRowIndex){var divId='AppGridE_RightDataDiv';var div=window.document.getElementById(divId);var table=div.getElementsByTagName('table')[0];var tr=table.rows[appGridE_SelectedRowIndex];var inputs=tr.getElementsByTagName('input');if(inputs&&inputs.length>0){for(var i=0;i<inputs.length;i++){if(inputs[i].type=='checkbox'&&!inputs[i].checked){var Css = document.defaultView.getComputedStyle(inputs[i], null);if (Css.display != "none"){inputs[i].click();}}}}var divId='AppGridE_LeftDataDiv';var div=window.document.getElementById(divId);var table=div.getElementsByTagName('table')[0];var tr=table.rows[appGridE_SelectedRowIndex];var inputs=tr.getElementsByTagName('input');if(inputs&&inputs.length>0){for(var i=0;i<inputs.length;i++){if(inputs[i].type=='checkbox'&&!inputs[i].checked){var Css = document.defaultView.getComputedStyle(inputs[i], null);if (Css.display != "none"){inputs[i].click();}}}}}var dataDivId='${dataDivId}';var divId='${divId}';var columnIndex=${columnIndex};var path='${pathArr[${i}]}';var action=${action};var table=window.document.getElementById(dataDivId).firstChild;for(var i=0;i<table.rows.length;i++){if(table.rows[i].style&&table.rows[i].style.display=='none'){continue;}if(table.rows[i].cells[columnIndex].innerText&&(rp(table.rows[i].cells[columnIndex].innerText)=='[+]'+path||rp(table.rows[i].cells[columnIndex].innerText)==path)){if(action==1){var Css = document.defaultView.getComputedStyle(table.rows[i], null);if (Css.display != "none"){table.rows[i].click();selectCheckbox(i);}}else if(action==2){var Css = document.defaultView.getComputedStyle(table.rows[i], null);if (Css.display != "none"){table.rows[i].click();table.rows[i].fireEvent('ondblclick');}}window.document.getElementById(divId).setAttribute('SelectedRowIndex',table.rows[i].rowIndex);return;}}return'0|||封装提示信息：未找到节点"'+path+'"，请检查参数是否正确';
+
+_getColumnLocation_AppGridE(含树、复杂表头)
+    [Arguments]    ${columnName}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    获取指定列的位置信息
+    ...
+    ...    *参数说明：*
+    ...
+    ...    columnName：目标列列头名称
+    ...
+    ...    *返回值说明：*
+    ...
+    ...    tableLocation：Left：固定部分；Right：可拖动部分
+    ...
+    ...    columnIndex：列索引
+    ${headerMode}    _getHeaderMode_AppGridE(含树、复杂表头)
+    _myExecuteJS    var debug=false;var headerMode=${headerMode};var columnName='${columnName}';function getColumnLocation(columnName){var columnArr=[];if(columnName.indexOf('|')>-1){columnArr=columnName.split('|');}var rightTitleTable=window.document.getElementById('AppGridE_RightTitleDiv').getElementsByTagName('table')[0];if(headerMode==1){var rowHeader=rightTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rowHeader.cells[i].innerText==columnName){return{'TableLocation':'Right','ColumnIndex':parseInt(i/2)};}}var tables=document.getElementById('AppGridE_LeftTitleDiv').getElementsByTagName('table');if(tables&&tables.length>0&&tables[0].rows&&tables[0].rows.length>0&&tables[0].rows[0].cells&&tables[0].rows[0].cells.length>0){var leftTitleTable=tables[0];rowHeader=leftTitleTable.rows[0];for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText==columnName){return{'TableLocation':'Left','ColumnIndex':parseInt(i/2)};}}}}else if(headerMode==3){var rowHeader=rightTitleTable.rows[0];if(columnName.indexOf('|')==-1){for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rowHeader.cells[i].innerText==columnName){var cellIndex=rowHeader.cells[i].cellIndex;var columnIndex=0;for(var j=0;j<cellIndex;j++){var colSpan=rowHeader.cells[j].getAttribute('colSpan');if(colSpan){columnIndex+=parseInt(colSpan);}else{columnIndex++;}}return{'TableLocation':'Right','ColumnIndex':parseInt(columnIndex/2)};}}}else{for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rowHeader.cells[i].innerText==columnArr[0]){var cellIndex=rowHeader.cells[i].cellIndex;var columnIndex=0;var colspanCount=0;for(var j=0;j<cellIndex;j++){var colSpan=rowHeader.cells[j].getAttribute('colSpan');var rowSpan=rowHeader.cells[j].getAttribute('rowSpan');if(colSpan){columnIndex+=parseInt(colSpan);if(parseInt(colSpan)>1&&parseInt(rowSpan)==1){colspanCount+=parseInt(colSpan);}else if(parseInt(colSpan)==1){if(rowSpan){if(rowSpan==1){colspanCount++;}}else{colspanCount++;}}}else{columnIndex++;if(rowSpan){if(rowSpan==1){colspanCount++;}}else{colspanCount++;}}}if(debug){alert('ColumnIndex:'+columnIndex+' ColspanCount:'+colspanCount);}var rowHeader1=rightTitleTable.rows[1];for(var k=colspanCount;k<colspanCount+rowHeader.cells[i].getAttribute('colSpan');k++){if(rowHeader1.cells[k].innerText&&rowHeader1.cells[k].innerText==columnArr[1]){columnIndex+=k-colspanCount;if(debug){alert('K:'+k+' ColumnIndex:'+columnIndex);}return{'TableLocation':'Right','ColumnIndex':parseInt(columnIndex/2)};}}}}}var tables=document.getElementById('AppGridE_LeftTitleDiv').getElementsByTagName('table');if(tables&&tables.length>0&&tables[0].rows&&tables[0].rows.length>0&&tables[0].rows[0].cells&&tables[0].rows[0].cells.length>0){var leftTitleTable=tables[0];rowHeader=leftTitleTable.rows[0];if(columnName.indexOf('|')==-1){for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rowHeader.cells[i].innerText==columnName){var cellIndex=rowHeader.cells[i].cellIndex;var columnIndex=0;for(var j=0;j<cellIndex;j++){var colSpan=rowHeader.cells[j].getAttribute('colSpan');if(colSpan){columnIndex+=parseInt(colSpan);}else{columnIndex++;}}return{'TableLocation':'Left','ColumnIndex':parseInt(columnIndex/2)};}}}else{for(var i=0;i<rowHeader.cells.length;i++){if(rowHeader.cells[i].innerText&&rowHeader.cells[i].innerText==columnArr[0]){var cellIndex=rowHeader.cells[i].cellIndex;var columnIndex=0;var colspanCount=0;for(var j=0;j<cellIndex;j++){var colSpan=rowHeader.cells[j].getAttribute('colSpan');var rowSpan=rowHeader.cells[j].getAttribute('rowSpan');if(colSpan){columnIndex+=parseInt(colSpan);if(parseInt(colSpan)>1&&parseInt(rowSpan)==1){colspanCount+=parseInt(colSpan);}else if(parseInt(colSpan)==1){if(rowSpan){if(rowSpan==1){colspanCount++;}}else{colspanCount++;}}}else{columnIndex++;if(rowSpan){if(rowSpan==1){colspanCount++;}}else{colspanCount++;}}}if(debug){alert('ColumnIndex:'+columnIndex+' ColspanCount:'+colspanCount);}var rowHeader1=leftTitleTable.rows[1];for(var k=colspanCount;k<colspanCount+rowHeader.cells[i].getAttribute('colSpan');k++){if(rowHeader1.cells[k].innerText&&rowHeader1.cells[k].innerText==columnArr[1]){columnIndex+=k-colspanCount;if(debug){alert('K:'+k+' ColumnIndex:'+columnIndex);}return{'TableLocation':'Left','ColumnIndex':parseInt(columnIndex/2)};}}}}}}}}var columnLocation=getColumnLocation(columnName);if(!columnLocation){return'0|||封装提示信息：列名"'+columnName+'"不存在，请检查参数是否正确';}window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_ColumnLocation',columnLocation.TableLocation);window.document.getElementsByTagName('html')[0].setAttribute('AppGridE_ColumnIndex',columnLocation.ColumnIndex);
+    ${tableLocation}    getElementAttribute    //html[1]@AppGridE_ColumnLocation
+    ${columnIndex}    getElementAttribute    //html[1]@AppGridE_ColumnIndex
+    [Return]    ${tableLocation}    ${columnIndex}
+
+_getHeaderMode_AppGridE(含树、复杂表头)
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    获取AppGridE控件的标头样式
+    ...
+    ...
+    ...    *返回值：*
+    ...
+    ...    headMode : 1：普通模式，2：一行，标头中包含多个table元素，3：两行标头，跨列
+    ${headerMode}    _myExecuteJS    var appGridEContent=window.document.getElementById('_divAGEContent');if(!appGridEContent){return'0|||封装提示信息：未找到id为"'+_divAGEContent+'"的DIV元素，请检查是否进入了正确的iframe';}var appGridE_title=window.document.getElementById('AppGridE_RightTitleDiv');var titleTable=appGridE_title.getElementsByTagName('table')[0];var headerMode=1;if(titleTable.rows.length==1){var cells=titleTable.rows[0].cells;for(var i=0;i<cells.length;i++){var childTable=cells[i].getElementsByTagName('table');if(childTable&&childTable.length>0){headerMode=2;break;}}}else{headerMode=3;}return'1|||'+headerMode;
+    [Return]    ${headerMode}
+
+_getCellLocation_AppGridE(含树、复杂表头)
+    [Arguments]    ${targetColumnName}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    获取指定单元格的位置信息
+    ...
+    ...    *参数说明：*
+    ...
+    ...    targetColumnName ： 目标列标头(多行标头用|分割)
+    ...
+    ...    *返回值：*
+    ...
+    ...    table：单元格所在的table元素id
+    ...
+    ...    rowIndex：单元格所在行索引
+    ...
+    ...    columnIndex：单元格所在列索引
+    ${tableLocation}    ${columnIndex}    _getColumnLocation_AppGridE(含树、复杂表头)    ${targetColumnName}
+    ${dataDivId}    run keyword if    '${tableLocation}' == 'Left'    Evaluate    'AppGridE_LeftDataDiv'    ELSE IF    '${tableLocation}' == 'Right'
+    ...    Evaluate    'AppGridE_RightDataDiv'
+    ${random}    Evaluate    random.randint(0,sys.maxint)    random,sys
+    Assign Id To Element    //div[@id='${dataDivId}']/table[1]    table${random}
+    ${tableId}    Get Element Attribute    //div[@id='${dataDivId}']/table[1]@id
+    ${rowIndex}    Get Element Attribute    //div[@id='_divAGEContent']@SelectedRowIndex
+    [Return]    ${tableId}    ${rowIndex}    ${columnIndex}

@@ -1,0 +1,45 @@
+*** Settings ***
+Resource          ../../内置库引用.txt
+
+*** Test Cases ***
+弹出框处理(alert)
+    #alert处理
+    Confirm Action    #处理方式1
+    #    #处理方式2
+    Win Activate    Windows Internet Explorer    确实要离开该页面吗?
+    Control Click    确定    Button1
+    #confirm处理
+    Confirm Action    #点击默认的按钮
+    #——————————————
+    Choose Cancel On Next Confirmation    #切换默认选中的按钮
+    Confirm Action    #点击默认的按钮
+
+关闭窗口
+    登录    admin    1
+    模块导航    客户关系管理(CRM)/销售管理/项目准备/折扣管理
+    定位页面    明源地产ERP
+    Select Frame    stage1/appIframe
+    Map_AppGridMenu_点击列表菜单项    更多操作/删除
+    Win Activate    来自网页的消息    确实要删除选择的记录吗?    #第二个参数为Window窗口中的提示信息，可用使用Au3Info.exe工具获得
+    Control Click    来自网页的消息    确定    Button1
+    Unselect Frame
+    [Teardown]    Close All Browsers
+
+关闭
+    登录    admin    1
+    模块导航    客户关系管理(CRM)/销售管理/项目准备/折扣管理
+    定位页面    明源地产ERP
+    Select Frame    stage1/appIframe
+    Map_AppGridMenu_点击列表菜单项    更多操作/删除
+    #校验提示信息
+    ${message}=    Confirm Action
+    LOG    ${message}
+    Run Keyword And Continue On Failure    Should Be Equal    ${message}    Are your sure?
+    #在弹出的提示信息中点击“取消”按钮
+    Choose Cancel On Next Confirmation    #点击取消
+    Unselect Frame
+    Select Frame    stage1/appIframe
+    Map_AppGridMenu_点击列表菜单项    更多操作/删除
+    #在弹出的提示信息中点击“确定”按钮
+    Confirm Action    #点击确定
+    [Teardown]    Close All Browsers

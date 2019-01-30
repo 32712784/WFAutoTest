@@ -1,0 +1,27 @@
+*** Test Cases ***
+单值变量赋值
+    ${text}    Set Variable    MYSOFT
+    LOG    ${text}
+
+一维数组赋值
+    @{ListOne}    Set Variable    111    222    333
+    LOG    ${ListOne}    #[u'111', u'222', u'333']
+    Log Many    @{ListOne}    #111 \ \ 222 \ \ \ 333
+    LOG    ${ListOne[0]},${ListOne[1]},${ListOne[2]}    #数组下标是从0开始,结果：111,222,333
+
+二维数值赋值
+    @{ListOne1}    Set Variable    a1    a2    a3    #[ a1 | a2 | a3 ]
+    @{ListOne2}    Create List    b1    b2    b3    #[ b1 | b2 | b3 ]
+    #[ [u'a1', u'a2', u'a3'] [u'b1', u'b2', u'b3'] ]
+    @{ListTwo}    Create List    ${ListOne1}    ${ListOne2}
+    Log Many    @{ListTwo}
+    Log    ${ListTwo}
+    Log    ${ListTwo[0][0]},${ListTwo[0][1]},${ListTwo[0][2]}    #a1,a2,a3
+    Log    ${ListTwo[1][0]},${ListTwo[1][1]},${ListTwo[1][2]}    #b1,b2,b3
+    #注意：数组变量在定义时，使用@，在使用时，使用$
+
+Evaluate和Set Variable区别
+    ${a}    Set Variable    4+3    #不会计算，直接将后面的值赋值给前面的变量
+    ${b}    Evaluate    4+3    #会先进行计算，再赋值
+    log    ${a}
+    log    ${b}

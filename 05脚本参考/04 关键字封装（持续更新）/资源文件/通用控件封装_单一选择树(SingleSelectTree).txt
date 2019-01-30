@@ -1,0 +1,152 @@
+*** Settings ***
+Library           Selenium2Library
+Resource          通用工具方法.txt
+
+*** Keywords ***
+Map_SingleSelectTree_选中行
+    [Arguments]    ${tableId}    ${treePath}
+    [Documentation]    *功能：*
+    ...
+    ...    逐级展开单选树层级，并选中末级行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId : SingleSelectTree控件对应的table元素的id
+    ...
+    ...    treePath: 层次路径，父级与子级之间用"/"分割
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_SingleSelectTree_选中行 | Table1 | 总部/华南区域/深圳公司/成本部
+    Return From Keyword If    '${treePath}'=='[NULL]' or '${treePath}'==''
+    _expandSingleSelectTreeAndAction    ${tableId}    ${treePath}    1
+
+Map_SingleSelectTree_双击行
+    [Arguments]    ${tableId}    ${treePath}
+    [Documentation]    *功能：*
+    ...
+    ...    逐级展开单选树层级，并双击末级行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId : SingleSelectTree控件对应的table元素的id
+    ...
+    ...    treePath: 层次路径，父级与子级之间用"/"分割
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_SingleSelectTree_双击行 | Table1 | 总部/华南区域/深圳公司/成本部
+    Return From Keyword If    '${treePath}'=='[NULL]' or '${treePath}'==''
+    _expandSingleSelectTreeAndAction    ${tableId}    ${treePath}    2
+
+Map_SingleSelectTree_选择多个节点(带复选框)
+    [Arguments]    ${treeNodeNameList}    ${tableLocator}=//table[@class='singleSelectTree']
+    [Documentation]    *功能：*
+    ...
+    ...    选择树节点复选框
+    ...
+    ...    *参数说明：*
+    ...
+    ...    treeNodeNameList ： 节点名称集合，每个节点名称包含父路径与子路径，父子路径之间用/分割；对于多个节点，节点与节点之间用|分割
+    ...
+    ...    tableLocator :
+    ...    控件对应的Table元素的定位信息，此参数具有默认值，一般可以省略，
+    ...    但是如果定位信息与默认值不同时，则必须填写此参数
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_SingleSelectTree_选择多个节点(带复选框) | 绿景中心/一期|绿景中心/二期
+    Return From Keyword If    '${treeNodeNameList}'=='[NULL]' or '${treeNodeNameList}'==''
+    #检查上下文
+    _myExecuteJS    var tables=window.document.getElementsByTagName('table');for(var i=0;i<tables.length;i++){if(tables[i].className&&tables[i].className.indexOf('singleSelectTree')>-1){return;}}return'0|||封装提示信息：未找到cssClass为singleSelectTree的table元素，请检查是否进入了正确的iframe或者使用了正确的关键字'
+    ${tableId}    Get Element Attribute    ${tableLocator}@id
+    ${nodeNameArr}    Evaluate    u'${treeNodeNameList}'.split('|')
+    ${nodeNameArrLen}    Evaluate    len(${nodeNameArr})
+    : FOR    ${i}    IN RANGE    ${nodeNameArrLen}
+    \    ${nodeName}    Evaluate    u'${nodeNameArr[${i}]}'
+    \    _expandSingleSelectTreeAndSelectCheckBox    ${tableId}    ${nodeName}
+
+_expandSingleSelectTreeAndAction
+    [Arguments]    ${tableId}    ${treePath}    ${action}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    逐级展开单选树，并执行指定的操作
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId : SingleSelectTree控件对应的table元素的id
+    ...
+    ...    treePath : 逐级展开的层次路径
+    ...
+    ...    action ：执行的动作 \ 1- 单击 ，2-双击
+    _myExecuteJS    var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}window.${tableId}.showLevel(1);
+    ${pathArr}    Evaluate    u'${treePath}'.split('/')
+    ${pathArrLen}    Evaluate    len(${pathArr})
+    ${j}    Evaluate    int(${pathArrLen})-1
+    : FOR    ${i}    IN RANGE    ${pathArrLen}
+    \    Run Keyword If    ${i} < ${j}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var nodeName='${pathArr[${i}]}';var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}var rows=table.rows;for(var s=0;s<rows.length;s++){if(!(rows[s].style&&rows[s].style.display&&rows[s].style.display=='none')&&rows[s].cells&&rows[s].cells[0]&&(rp(rows[s].cells[0].innerText)=='[+]'+rp(nodeName)||rp(rows[s].cells[0].innerText)=='[-]'+rp(nodeName))){var labels=rows[s].getElementsByTagName('label');for(var label in labels){if(labels[label].innerHTML=='[+]'){labels[label].click();}}return;}}return'0|||封装提示信息：未找到节点"'+nodeName+'"，请检查参数是否正确'    ELSE    _myExecuteJS
+    \    ...    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}var lastPath='${pathArr[${i}]}';var action=${action};var rows=table.getElementsByTagName('tr');var currentRow;for(var row in rows){currentRow=rows[row];if(!(currentRow.style&&currentRow.style.display&&currentRow.style.display=='none')&&currentRow.cells&&currentRow.cells[0]&&rp(currentRow.cells[0].innerText).indexOf(rp(lastPath)) != -1){var trOnClick=currentRow.getAttribute('onclick');if(trOnClick){currentRow.click();}else{currentRow.cells[0].click();}if(action==2){var trOnDblClick=currentRow.getAttribute('ondblclick');if(trOnDblClick){currentRow.fireEvent('ondblclick');}else{currentRow.cells[0].fireEvent('ondblclick');}}return;}}return'0|||封装提示信息：未找到节点"'+lastPath+'"，请检查参数是否正确'
+
+_expandSingleSelectTreeAndSelectCheckBox
+    [Arguments]    ${tableId}    ${treePath}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    逐级展开单选树，并选择末级复选框
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId : SingleSelectTree控件对应的table元素的id
+    ...
+    ...    treePath : 逐级展开的层次路径
+    _myExecuteJS    var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}window.${tableId}.showLevel(1);
+    ${pathArr}    Evaluate    u'${treePath}'.split('/')
+    ${pathArrLen}    Evaluate    len(${pathArr})
+    ${j}    Evaluate    int(${pathArrLen})-1
+    : FOR    ${i}    IN RANGE    ${pathArrLen}
+    \    Run Keyword If    ${i} < ${j}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var nodeName='${pathArr[${i}]}';var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}var rows=table.getElementsByTagName('tr');for(var s=0;s<rows.length;s++){if(!(rows[s].style&&rows[s].style.display&&rows[s].style.display=='none')&&(rp(rows[s].innerText)=='[+]'+rp(nodeName)||rp(rows[s].innerText)=='[-]'+rp(nodeName))){var labels=rows[s].getElementsByTagName('label');for(var label in labels){if(labels[label].innerHTML=='[+]'){labels[label].click();}}return;}}return'0|||封装提示信息：未找到节点"'+nodeName+'"，请检查参数是否正确'    ELSE    _myExecuteJS
+    \    ...    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}var lastPath='${pathArr[${i}]}';var rows=table.rows;var currentRow;for(var row in rows){currentRow=rows[row];if(!(currentRow.style&&currentRow.style.display&&currentRow.style.display=='none')&&currentRow.cells&&currentRow.cells[0]&&rp(currentRow.cells[0].innerText).replace('[+]','').replace('[-]','')==rp(lastPath)){var checkBoxs=currentRow.cells[0].getElementsByTagName('input');for(var checkBox in checkBoxs){if(checkBoxs[checkBox].type=='checkbox'){checkBoxs[checkBox].click();break;}}return;}}return'0|||封装提示信息：未找到节点"'+lastPath+'"，请检查参数是否正确'
+
+_expandSingleSelectTreeAndAction_256
+    [Arguments]    ${tableId}    ${treePath}    ${action}
+    [Documentation]    ====内部方法，不对外使用====
+    ...
+    ...    *功能：*
+    ...
+    ...    逐级展开单选树，并执行指定的操作
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId : SingleSelectTree控件对应的table元素的id
+    ...
+    ...    treePath : 逐级展开的层次路径
+    ...
+    ...    action ：执行的动作 \ 1- 单击 ，2-双击
+    _myExecuteJS    var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}window.${tableId}.showLevel(1);
+    ${pathArr}    Evaluate    u'${treePath}'.split('/')
+    ${pathArrLen}    Evaluate    len(${pathArr})
+    ${j}    Evaluate    int(${pathArrLen})-1
+    : FOR    ${i}    IN RANGE    ${pathArrLen}
+    \    Run Keyword If    ${i} < ${j}    _myExecuteJS    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var nodeName='${pathArr[${i}]}';var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}var rows=table.rows;for(var s=0;s<rows.length;s++){if(!(rows[s].style&&rows[s].style.display&&rows[s].style.display=='none')&&rows[s].cells&&rows[s].cells[0]&&(rp(rows[s].cells[0].innerText)=='[+]'+rp(nodeName)||rp(rows[s].cells[0].innerText)=='[-]'+rp(nodeName))){var labels=rows[s].getElementsByTagName('label');for(var label in labels){if(labels[label].innerHTML=='[+]'){labels[label].click();}}return;}}return'0|||封装提示信息：未找到节点"'+nodeName+'"，请检查参数是否正确'    ELSE    _myExecuteJS
+    \    ...    function rp(s){while(s.indexOf('　')>-1||s.indexOf(' ')>-1)s=s.replace('　','').replace(' ','');return s;};var tableId='${tableId}';var table=window.document.getElementById(tableId);if(!table){return'0|||封装提示信息：不存在id为"'+tableId+'"的tabel元素，请检查是否正确传入tableId，或者是否进入正确的iframe';}var lastPath='${pathArr[${i}]}';var action=${action};var rows=table.getElementsByTagName('tr');var currentRow;for(var row in rows){currentRow=rows[row];if(!(currentRow.style&&currentRow.style.display&&currentRow.style.display=='none')&&currentRow.cells&&currentRow.cells[0]&&rp(currentRow.cells[0].innerText).indexOf(rp(lastPath))!=-1){var trOnClick=currentRow.getAttribute('onclick');if(trOnClick){currentRow.click();}else{currentRow.cells[0].click();}if(action==2){var trOnDblClick=currentRow.getAttribute('ondblclick');if(trOnDblClick){currentRow.fireEvent('ondblclick');}else{currentRow.cells[0].fireEvent('ondblclick');}}return;}}return'0|||封装提示信息：未找到节点"'+lastPath+'"，请检查参数是否正确'
+
+Map_SingleSelectTree_双击行_256
+    [Arguments]    ${tableId}    ${treePath}
+    [Documentation]    *功能：*
+    ...
+    ...    逐级展开单选树层级，并双击末级行
+    ...
+    ...    *参数说明：*
+    ...
+    ...    tableId : SingleSelectTree控件对应的table元素的id
+    ...
+    ...    treePath: 层次路径，父级与子级之间用"/"分割
+    ...
+    ...    *示例：*
+    ...
+    ...    Map_SingleSelectTree_双击行 | Table1 | 总部/华南区域/深圳公司/成本部
+    Return From Keyword If    '${treePath}'=='[NULL]' or '${treePath}'==''
+    _expandSingleSelectTreeAndAction_256    ${tableId}    ${treePath}    2
