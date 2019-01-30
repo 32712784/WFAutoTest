@@ -1,0 +1,102 @@
+*** Settings ***
+Library           Selenium2Library    timeout=20
+Library           os
+Resource          ../02关键字封装/关键字引用.txt
+Library           re
+Library           String
+
+*** Variables ***
+${wf_url}         http://10.5.11.4:11053/backend/processlist/center.aspx?classname=handlelist&type=ProcessTodoList&activeNav=ProcessTodoList
+${流程模板}           test集中发起
+
+*** Test Cases ***
+01-新建流程并保存草稿
+    登录    ${wf_url}    admin    1
+    新建流程    ${流程模板}    SaveDraft=保存草稿
+    点击元素    css=div[type='dialog'] .layui-layer-btn1
+    Wait For Condition    return document.title == '流程草稿'
+    Title Should Be    流程草稿
+    ${ProcessName}    Get Text    id=js-processName
+    ${ProcessName}    Replace String    ${ProcessName}    [    ${EMPTY}
+    ${ProcessName}    Replace String    ${ProcessName}    ]    ${EMPTY}
+    Set Global Variable    ${ProcessName}
+    log    ${ProcessName}
+    Close All Browsers
+    [Teardown]
+
+02-我发起的流程-草稿查询
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    草稿    ${ProcessName}
+    sleep    1
+    Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']    ${ProcessName}    #校验流程名称
+    Close Browser
+
+03-草稿发起
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    草稿    ${ProcessName}
+    点击元素    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
+    ${handle}    select window    NEW    #切换到新开窗口
+    发起操作
+    Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
+    select window    Main
+    校验流程状态    ${ProcessName}    处理中
+    Close All Browsers
+
+04-我发起的流程-处理中查询
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    处理中    ${ProcessName}
+    sleep    1
+    ${SearchCount}    Get Element Count    css=.layui-table-body.layui-table-main tr    #获取搜索结果数量
+    Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']    ${ProcessName}    #校验流程名称
+    Should Be Equal    '${SearchCount}'    '1'    #搜索结果只有一条
+    Close All Browsers
+
+05-我办理的流程-待办查询
+    登录    ${wf_url}    admin    1
+    我办理的流程查询    待办    ${ProcessName}
+    sleep    1
+    ${SearchCount}    Get Element Count    css=.layui-table-body.layui-table-main tr    #获取搜索结果数量
+    Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']    ${ProcessName}    #校验流程名称
+    Should Be Equal    '${SearchCount}'    '1'    #搜索结果只有一条
+    Close All Browsers
+
+06-待办审批-同意
+    登录    ${wf_url}    admin    1
+    我办理的流程查询    待办    ${ProcessName}
+    点击元素    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
+    ${handle}    select window    NEW    #切换到新开窗口
+    流程审批操作    同意    审批同意    2    3
+    select window    Main
+    校验流程状态    ${ProcessName}    已通过
+    Close All Browsers
+
+07-我发起的流程-已通过查询
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    已通过    ${ProcessName}
+    sleep    1
+    我发起和办理的流程查询校验    ${ProcessName}    1
+    Close All Browsers
+
+08-我办理的流程-已办查询
+    登录    ${wf_url}    admin    1
+    我办理的流程查询    已办    ${ProcessName}
+    sleep    1
+    我发起和办理的流程查询校验    ${ProcessName}    1
+    Close All Browsers
+
+09-归档审批
+    登录    ${wf_url}    admin    1
+    我办理的流程查询    待办    ${ProcessName}
+    点击元素    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
+    ${handle}    select window    NEW    #切换到新开窗口
+    流程审批操作    归档    归档同意    3    3
+    select window    Main
+    校验流程状态    ${ProcessName}    已归档
+    Close All Browsers
+
+10-我发起的流程-已归档查询
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    已归档    ${ProcessName}
+    sleep    1
+    我发起和办理的流程查询校验    ${ProcessName}    1
+    Close All Browsers

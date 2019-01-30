@@ -1,0 +1,5 @@
+*** Settings ***
+Test Teardown     OperatingSystem.Run	taskkill /IM "chromedriver.exe" /T /F    # 用例结束后杀chromedriver进程
+Library           Selenium2Library
+Library           requests
+Library           OperatingSystem

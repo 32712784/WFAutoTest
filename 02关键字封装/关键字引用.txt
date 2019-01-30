@@ -1,0 +1,12 @@
+*** Settings ***
+Resource          01业务关键字.txt
+Resource          02基本关键字.txt
+Resource          04API关键字.txt
+Library           Selenium2Library
+Library           Collections
+Library           RequestsLibrary
+Library           OperatingSystem
+Resource          03校验封装.txt
+
+*** Variables ***
+${url}            http://10.5.11.42:9961/PubPlatform/Login/ssologin.aspx?targeturl=http%3a%2f%2f10.5.11.42%3a9962    # 9962重构工作流登陆

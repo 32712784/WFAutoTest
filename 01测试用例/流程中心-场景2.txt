@@ -1,0 +1,61 @@
+*** Settings ***
+Library           Selenium2Library    timeout=20
+Library           String
+Resource          ../02关键字封装/关键字引用.txt
+Library           OperatingSystem
+Library           os
+
+*** Variables ***
+${wf_url}         http://10.5.11.4:11053/backend/processlist/center.aspx?classname=handlelist&type=ProcessTodoList&activeNav=ProcessTodoList
+${抄送人}            王胜成
+${流程模板}           test集中发起
+
+*** Test Cases ***
+新建流程并抄送给用户B
+    登录    ${wf_url}    admin    1
+    新建流程    ${流程模板}    ${抄送人}
+    Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
+    ${ProcessName}    Get Text    id=js-title
+    Set Global Variable    ${ProcessName}
+    log    ${ProcessName}
+    select window    Main
+    校验流程状态    ${ProcessName}    处理中
+    Close All Browsers
+
+我办理的流程-抄送查询
+    登录    ${wf_url}    ${抄送人}    1
+    我办理的流程查询    抄送    ${ProcessName}
+    sleep    1
+    我发起和办理的流程查询校验    ${ProcessName}    1
+    Close All Browsers
+
+传阅流程
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    处理中    ${ProcessName}
+    点击元素    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a    #点击流程名称打开审批页面
+    ${handle}    select window    NEW    #切换到新开窗口
+    流程审批更多操作    传阅    admin
+    Wait Until Element Attribute Contains    css=.layui-layer-content.layui-layer-padding    text    传阅成功
+    Element Should Contain    css=.layui-layer-content.layui-layer-padding    传阅成功
+    Close All Browsers
+
+我办理的流程-传阅查询
+    登录    ${wf_url}    admin    1
+    我办理的流程查询    传阅    ${ProcessName}
+    sleep    1
+    我发起和办理的流程查询校验    ${ProcessName}    1
+    Close All Browsers
+
+我办理的流程-全部
+    登录    ${wf_url}    admin    1
+    我办理的流程查询    全部    ${ProcessName}
+    sleep    1
+    我发起和办理的流程查询校验    ${ProcessName}    1
+    Close All Browsers
+
+我发起的流程-全部
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    全部    ${ProcessName}
+    sleep    1
+    我发起和办理的流程查询校验    ${ProcessName}    1
+    Close All Browsers

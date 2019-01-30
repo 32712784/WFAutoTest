@@ -1,0 +1,2 @@
+*** Variables ***
+${url}            http://10.5.11.42:9961/PubPlatform/Login/ssologin.aspx?targeturl=http%3a%2f%2f10.5.11.42%3a9962

@@ -1,0 +1,35 @@
+*** Settings ***
+Library           requests
+Library           Collections
+Library           RequestsLibrary
+
+*** Keywords ***
+CreateHttpConnect
+    [Arguments]    ${url}
+    Create Session    api    ${url}
+
+SetRequestHeaders
+    [Arguments]    ${cookie}
+    [Documentation]    *功能：*
+    ...
+    ...    创建请求头信息
+    ...
+    ...    *参数说明：*
+    ...
+    ...    cookie ：AAA
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    SetRequestHeaders | ${cookie}
+    #定义头部字典
+    ${headers}    Create Dictionary
+    #设置头部参数
+    ${accept}    Set Variable    application/json
+    ${Content-Type}    Set Variable    application/json
+    ${User-Agent}    Set Variable    Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E; .NET CLR 1.1.4322)
+    #头部信息传入字典
+    Set To Dictionary    ${headers}    Cookie    ${cookie}
+    Set To Dictionary    ${headers}    accept    ${accept}
+    Set To Dictionary    ${headers}    Content-Type    ${User-Agent}
+    Return From Keyword    ${headers}
