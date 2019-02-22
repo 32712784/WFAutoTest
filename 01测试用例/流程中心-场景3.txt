@@ -1,0 +1,26 @@
+*** Settings ***
+Documentation     场景2-1：通过处理中的操作审批流程。
+...               数据准备：
+...               1、流程模板（A发起-A审批-A手动归档）
+Library           Selenium2Library    timeout=20
+Library           String
+Resource          ../02关键字封装/关键字引用.txt
+Library           OperatingSystem
+Library           os
+
+*** Variables ***
+${wf_url}         http://10.5.11.4:11053/backend/processlist/center.aspx?classname=handlelist&type=ProcessTodoList&activeNav=ProcessTodoList
+${流程模板}           test集中发起
+
+*** Test Cases ***
+发起流程
+    [Documentation]    数据准备用例，发起流程
+    登录    ${wf_url}    admin    1
+    新建流程    ${流程模板}
+    Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
+    ${ProcessName}    Get Text    id=js-title
+    Set Global Variable    ${ProcessName}
+    log    ${ProcessName}
+    select window    Main
+    校验流程状态    ${ProcessName}    处理中
+    Close All Browsers

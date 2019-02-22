@@ -94,6 +94,7 @@ Resource          关键字引用.txt
     ${FrameId}    Set Variable    [@id=\'layui-layer-iframe${PopupCount}\']    #拼接frameId,传阅时会有两个iframe
     ${layerId}    Set Variable    [id='layui-layer${PopupCount}']    #拼接确认id,传阅时会有两个弹窗
     Select Frame    //iframe[@scrolling='auto']${FrameId}    #切换最新的frame
+    Wait Until Element Is Visible    css=.jstree-anchor    #先等组织架构加载出来
     Execute Javascript    $("#selectProcessAuditors .tt-hint").removeAttr('readonly')
     点击元素    css=#selectProcessAuditors .tt-input    #点击输入栏
     输入    css=#selectProcessAuditors .tt-input    ${auditorCode}
