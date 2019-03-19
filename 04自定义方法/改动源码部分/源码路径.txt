@@ -1,0 +1,8 @@
+修正list，tuple和dict中出现的乱码
+C:\Python27\Lib\site-packages\robot\utils\unic.py
+
+RIDE中文日志乱码问题
+C:\Python27\Lib\site-packages\robotide\contrib\testrunner\testrunner.py
+
+添加等待元素属性值包含的方法wait_until_element_attribute_contains
+C:\Python27\Lib\site-packages\SeleniumLibrary\keywords\waiting.py
