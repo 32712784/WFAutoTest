@@ -30,6 +30,7 @@ Resource          关键字引用.txt
     ...    登录 | admin | 1 | http://192.168.236.3:4444/wd/hub
     open browser    ${login_url}    chrome    remote_url=${Remote_url}
     Maximize Browser Window
+    Comment    Set Window Size    1360    768
     Wait For Condition    return jQuery.active==0    # 等待页面加载完成
     input text    user    ${userName}
     input password    pwd    ${password}
@@ -54,15 +55,15 @@ Resource          关键字引用.txt
     ...    新建流程 | 流程模板test | admin | 保存草稿
     Wait Until Element Is Visible    id=easy_search_btn    #等待搜索按钮出现
     点击元素    css=a[data-nav="newProcess"]    #点击新建流程
-    Wait Until Element Is Visible    css=div[type='loading']    20
-    Wait Until Element Attribute Contains    id=pageLoading    style    none;    #等待属性包含
+    Comment    Wait Until Element Is Visible    css=div[type='loading']    20
+    Comment    Wait Until Element Attribute Contains    id=pageLoading    style    none;    #等待属性包含
     点击元素    id=tab_all    #点击全部流程页签
     Wait Until Element Attribute Contains    id=tab_item_all    style    block;    #等待属性包含
     点击元素    css=#tab_item_all [title="${ProcessModuleName}"]    #点击流程模板发起
-    ${handle}    select window    NEW    #切换到新开窗口
+    等待窗口切换成功
     Wait For Condition    return $.active == 0
     Input Text    id=js-handleText    AutoTest同意
-    sleep    1
+    Comment    sleep    1
     点击元素    css=#js-NeedDepartMent [role='button']    #点击发起部门选框
     点击元素    css=#js-NeedDepartMent [role='listbox'] [data-original-index='1'] > a    #选择第一个选项
     Run Keyword If    '${Cc}' != 'None'    添加责任人    css=#js-NeedOption #js-select-auditors    ${Cc}    #如果抄送人不为空，则添加抄送人
@@ -71,7 +72,7 @@ Resource          关键字引用.txt
     ...    ELSE    Run Keywords    点击元素    css=.btn-blue.btn-yes
     ...    AND    等待加载图标显示后消失    css=div[type='loading']
     ...    AND    点击元素    css=.layui-layer-btn1.blueBtn
-    ...    AND    Wait Until Element Is Not Visible    css=.layui-layer-shade
+    ...    AND    等待对象不可见    css=.layui-layer-shade
 
 添加责任人
     [Arguments]    ${locator}    ${auditorCode}
@@ -94,7 +95,7 @@ Resource          关键字引用.txt
     ${FrameId}    Set Variable    [@id=\'layui-layer-iframe${PopupCount}\']    #拼接frameId,传阅时会有两个iframe
     ${layerId}    Set Variable    [id='layui-layer${PopupCount}']    #拼接确认id,传阅时会有两个弹窗
     Select Frame    //iframe[@scrolling='auto']${FrameId}    #切换最新的frame
-    Wait Until Element Is Visible    css=.jstree-anchor    #先等组织架构加载出来
+    Wait Until Element Is Visible    css=.jstree-anchor    20    #先等组织架构加载出来
     Execute Javascript    $("#selectProcessAuditors .tt-hint").removeAttr('readonly')
     点击元素    css=#selectProcessAuditors .tt-input    #点击输入栏
     输入    css=#selectProcessAuditors .tt-input    ${auditorCode}
@@ -103,7 +104,7 @@ Resource          关键字引用.txt
     点击元素    css=${layerId} .layui-layer-btn0    #点击确认添加
 
 我发起的流程查询
-    [Arguments]    ${SearchModule}    ${ProcessName}
+    [Arguments]    ${SearchModule}    ${ProcessName}    ${searchResultCount}=1
     [Documentation]    *功能：*
     ...
     ...    我发起的流程下的对应页签模块查询流程实例
@@ -113,6 +114,8 @@ Resource          关键字引用.txt
     ...    SearchModule ：我发起的流程下的模块名称：处理中，已通过，已归档，草稿，全部
     ...
     ...    ProcessName : 输入需要查询的流程名称
+    ...
+    ...    searchResultCount：查询结果数量，默认为1，草稿删除后查询需要传入0
     ...
     ...    *示例：*
     ...
@@ -127,10 +130,13 @@ Resource          关键字引用.txt
     点击元素    css=li[data-listtype='${data-listtype}']    #点击处理中，已通过，已归档，草稿，全部等页签
     Wait Until Element Attribute Contains    id=bu_chosen_chosen    text    ${EMPTY}
     Wait Until Element Attribute Contains    id=bu_chosen_chosen    text    全部
-    sleep    1
+    Comment    sleep    1
     输入    processName    ${ProcessName}
     点击元素    easy_search_btn    #点击搜索
-    Wait For Condition    return $.trim($(".layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']").text()) == "${ProcessName}"    #等待搜索结果第一条流程名称等于特定流程名称
+    #等待搜索结果第一条流程名称等于特定流程名称
+    Run Keyword If    '${searchResultCount}' == '1'    Wait For Condition    return $.trim($(".layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']").text()) == "${ProcessName}"
+    ...    ELSE    Wait Until Element Is Visible    css=.layui-none
+    sleep    1
 
 我办理的流程查询
     [Arguments]    ${SearchModule}    ${ProcessName}
@@ -161,6 +167,7 @@ Resource          关键字引用.txt
     输入    processName__OwnerName    ${ProcessName}
     点击元素    easy_search_btn    #点击搜索
     Wait For Condition    return $.trim($(".layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']").text()) == "${ProcessName}"    #等待搜索结果第一条流程名称等于特定流程名称
+    sleep    1
 
 发起操作
     [Arguments]    ${Cc}=None
@@ -177,14 +184,14 @@ Resource          关键字引用.txt
     ...    发起操作 | admin
     Wait For Condition    return $.active == 0
     输入    id=js-handleText    AutoTest发起
-    sleep    1
+    Comment    sleep    1
     点击元素    css=#js-NeedDepartMent [role='button']    #点击发起部门选框
     点击元素    css=#js-NeedDepartMent [role='listbox'] [data-original-index='1'] > a    #选择第一个选项
     Run Keyword If    '${Cc}' != 'None'    添加责任人    css=#js-NeedOption #js-select-auditors    ${Cc}    #如果抄送人不为空，则添加抄送人
     点击元素    css=.btn-blue.btn-yes    #点击发起
-    等待加载图标显示后消失    css=div[type='loading']
+    Comment    等待加载图标显示后消失    css=div[type='loading']
     点击元素    css=.layui-layer-btn1.blueBtn    #点击确认
-    Wait Until Element Is Not Visible    css=.layui-layer-shade
+    等待对象不可见    css=.layui-layer-shade
 
 流程审批操作
     [Arguments]    ${Operate}    ${approvalText}    ${StepNum}    ${NodeStatus}    ${AuditorCode}=None
@@ -230,6 +237,7 @@ Resource          关键字引用.txt
     点击元素    css=.btn-blue.btn-yes    #点击确定
     Comment    等待加载图标显示后消失    css=div[type='loading']
     ${StepNum}    Evaluate    ${StepNum}-1
+    #等待审批操作完成后审批轨道图出现刚刚审批的节点出现
     Wait Until Element Is Visible    css=li[data-path='${StepNum}'] div[data-node-status='${NodeStatus}']
 
 流程审批更多操作
@@ -266,3 +274,40 @@ Resource          关键字引用.txt
     ...    AND    Unselect Frame
     sleep    1
     点击元素    ${confirmCSS}    #点击确定
+
+查询后的操作
+    [Arguments]    ${Operate}    ${InputContent}=${Empty}
+    [Documentation]    *功能：*
+    ...
+    ...    在我发的流程，处理中可以通过操作列进行作废、催办；已通过可以作废、催办；草稿可以发起、删除；全部则包含以上，按钮对应关系也一样；但是已归档没有操作列；
+    ...
+    ...    *参数说明：*
+    ...
+    ...    Operate ：作废，催办，删除，发起
+    ...
+    ...    InputContent : 作废和催办需要填入内容，删除不用，发起则是直接跳转新页面
+    ...
+    ...    *示例：*
+    ...
+    ...    查询后的操作 | 作废 | AutoTest作废
+    ${OperateEleCSS}    Set Variable If    '${Operate}'=='作废'    cancelProcess    '${Operate}'=='催办'    remideProcess    '${Operate}'=='删除'
+    ...    delProcess    '${Operate}'=='发起'    initProcess
+    Wait For Condition    return $.active == 0
+    点击元素    css=a[lay-event="${OperateEleCSS}"]    #作废，催办，删除，发起
+    #点击作废后，输入作废内容后，确定
+    Wait For Condition    return $.active == 0
+    #点击操作按钮后，如果不用sleep，输入原因时会找不到元素，还未解决
+    Comment    sleep    1
+    Run Keyword If    '${Operate}'=='作废'    Run Keywords    Select Frame    //iframe[@id='layui-layer-iframe2']
+    ...    AND    输入    cancelReason    ${InputContent}
+    ...    AND    Unselect Frame
+    ...    AND    点击元素    css=.layui-layer-btn0
+    #点击催办后，输入催办内容后，确定
+    Run Keyword If    '${Operate}'=='催办'    Run Keywords    Select Frame    //iframe[@id='layui-layer-iframe2']
+    ...    AND    输入    id=remideContent    ${InputContent}
+    ...    AND    Unselect Frame
+    ...    AND    点击元素    css=.layui-layer-btn0
+    #点击删除后，确定
+    Run Keyword If    '${Operate}'=='删除'    Run Keyword    点击元素    css=.layui-layer-btn0
+    #点击发起后，跳转到新页面
+    Run Keyword If    '${Operate}'=='发起'    Run Keyword    等待窗口切换成功

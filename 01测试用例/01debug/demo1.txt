@@ -1,0 +1,36 @@
+*** Settings ***
+Documentation     场景2-2：在我发起的流程-已通过，操作下的按钮处理流程，并在各个场景能查询到结果。
+...               数据准备：
+...               1、流程模板（A发起-A手动归档）
+Resource          ../../02关键字封装/关键字引用.txt
+Library           Selenium2Library    timeout=20
+
+*** Variables ***
+
+*** Test Cases ***
+case1
+    #即使错误也继续执行，也不记录失败，且可以返回执行状态和错误信息
+    ${Run Keyword And Ignore Error status}    ${statusValue}    Run Keyword And Ignore Error    Click Element    //span[@title="aaa"]
+    #执行关键字，返回执行成功或者失败状态，True和False
+    ${Run Keyword And Return status}    Run Keyword And Return Status    Click Element    //span[@title="aaa"]
+    ${message}    Set Variable    Are your sure?
+    #即使错误也继续执行，不中止用例，但是会记录失败
+    Run Keyword And Continue On Failure    Should Be Equal    ${message}    Are your sure?
+    #这个会报失败
+    Run Keyword And Continue On Failure    Click Element    //span[@title="aaa"]
+    #执行关键字，匹配失败的信息，如果关键字执行成功，则Run Keyword And Expect Error 失败。比如evaluate 1/0肯定会失败，则catch失败信息
+    ${msg} =    Run Keyword And Expect Error    *    evaluate    1/0
+    Should Start With    ${msg}    Evaluating expression '1/0' failed: ZeroDivisionError: integer division or modulo
+    #重复执行关键字
+    Repeat Keyword    2    Log    repeat
+    #在规定时间规定频率内执行关键字，直到成功。如果超时，则失败。适合用在selenium点击和输入事件
+    Wait Until Keyword Succeeds    10s    2s    log    Wait Until Keyword Succeeds 执行成功
+    Wait Until Keyword Succeeds    10s    2s    evaluate    1/0
+
+case2
+    登录    ${wf_url}    admin    1
+    ${start}    evaluate    time.time()    time
+    Wait Until Keyword Succeeds    10    1    Wait Until Element Is Not Visible    css=.mp-holder-grid-holder
+    ${end}    evaluate    time.time()    time
+    ${processTime}    evaluate    ${end}-${start}
+    log    aaa

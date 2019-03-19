@@ -3,22 +3,17 @@ Documentation     场景2
 ...               数据准备：
 ...               1、流程模板（A发起-A审批-A手动归档）
 ...               2、抄送人B
-Library           Selenium2Library    timeout=20
-Library           String
 Resource          ../02关键字封装/关键字引用.txt
-Library           OperatingSystem
-Library           os
+Library           Selenium2Library    timeout=20
 
 *** Variables ***
-${wf_url}         http://10.5.11.4:11053/backend/processlist/center.aspx?classname=handlelist&type=ProcessTodoList&activeNav=ProcessTodoList
 ${抄送人}            王胜成
-${流程模板}           test集中发起
 
 *** Test Cases ***
-新建流程并抄送给用户B
+01-新建流程并抄送给用户B
     [Documentation]    新建流程，并添加抄送人，发起后，流程监控验证状态为处理中
     登录    ${wf_url}    admin    1
-    新建流程    ${流程模板}    ${抄送人}
+    新建流程    ${ProcessModule_1}    ${抄送人}
     Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
     ${ProcessName}    Get Text    id=js-title
     Set Global Variable    ${ProcessName}
@@ -27,15 +22,14 @@ ${流程模板}           test集中发起
     校验流程状态    ${ProcessName}    处理中
     Close All Browsers
 
-我办理的流程-抄送查询
+02-我办理的流程-抄送查询
     [Documentation]    被抄送人用户进入我办理的流程--抄送，验证抄送给我的流程
     登录    ${wf_url}    ${抄送人}    1
     我办理的流程查询    抄送    ${ProcessName}
-    sleep    1
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers
 
-传阅流程
+03-传阅流程
     [Documentation]    对流程进行传阅操作，并验证传阅成功
     登录    ${wf_url}    admin    1
     我发起的流程查询    处理中    ${ProcessName}
@@ -46,26 +40,23 @@ ${流程模板}           test集中发起
     Element Should Contain    css=.layui-layer-content.layui-layer-padding    传阅成功
     Close All Browsers
 
-我办理的流程-传阅查询
+04-我办理的流程-传阅查询
     [Documentation]    被传阅用户进入我办理的流程--传阅，验证存在传阅给我的流程
     登录    ${wf_url}    admin    1
     我办理的流程查询    传阅    ${ProcessName}
-    sleep    1
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers
 
-我办理的流程-全部
+05-我办理的流程-全部
     [Documentation]    我办理的流程-全部，验证能在此列表搜索到此场景的流程
     登录    ${wf_url}    admin    1
     我办理的流程查询    全部    ${ProcessName}
-    sleep    1
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers
 
-我发起的流程-全部
+06-我发起的流程-全部
     [Documentation]    我发起的流程-全部，验证能在此列表搜索到此场景的流程
     登录    ${wf_url}    admin    1
     我发起的流程查询    全部    ${ProcessName}
-    sleep    1
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers

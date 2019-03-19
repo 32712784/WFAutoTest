@@ -1,2 +1,17 @@
 *** Variables ***
-${url}            http://10.5.11.42:9961/PubPlatform/Login/ssologin.aspx?targeturl=http%3a%2f%2f10.5.11.42%3a9962
+
+*** Keywords ***
+全局环境参数
+    [Documentation]    *功能：*
+    ...
+    ...    引入Environment.py文件中的全局参数
+    ...
+    ...    *使用说明：*
+    ...
+    ...    将通用参数.txt引入到用例文件夹的resource下，再通过test setup初始化变量，所有用例即可使用.py的变量
+    ...
+    ...    *示例：*
+    ...    点击01测试用例文件夹
+    ...    Test Setup \ 全局环境参数
+    ...    Resource \ ../03资源文件/通用参数.txt
+    import variables    ${CURDIR}\\Environment.py

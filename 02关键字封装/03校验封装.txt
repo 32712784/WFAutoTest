@@ -34,7 +34,101 @@ Resource          关键字引用.txt
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessStatusShow'] > div    ${ProcessStatus}
 
 我发起和办理的流程查询校验
-    [Arguments]    ${ProcessName}    ${AssertSearchCount}
+    [Arguments]    ${ProcessName}    ${ExpectSearchCount}    ${ExpectStatus}=${EMPTY}
+    [Documentation]    *功能：*
+    ...
+    ...    我发我和办理的流程查询校验，可以校验名称+搜索结果数量。或者校验名称+搜索结果数量+流程状态
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ProcessName：流程名称
+    ...
+    ...    ExpectSearchCount：搜索结果数量
+    ...
+    ...    ExpectStatus : 流程对应的流程状态
+    ...
+    ...    *示例：*
+    ...
+    ...    我发我和办理的流程查询校验 | test集中发起-0104 | 1
+    ...
+    ...    我发我和办理的流程查询校验 | test集中发起-0104 | 1 | 处理中
     ${SearchCount}    Get Element Count    css=.layui-table-body.layui-table-main tr    #获取搜索结果数量
-    Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']    ${ProcessName}    #校验流程名称
-    Should Be Equal    '${SearchCount}'    '${AssertSearchCount}'    #搜索结果只有一条
+    ${ActualProcessName}    Get Text    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']
+    #急催超在流程名称前，影响判断
+    ${ActualProcessName}    Strip String    ${ActualProcessName}
+    Should Be Equal    ${ActualProcessName}    ${ProcessName}    #校验流程名称
+    Should Be Equal    '${SearchCount}'    '${ExpectSearchCount}'    #搜索结果只有一条
+    #如果传入了预期状态参数，才进行状态判断
+    Run Keyword If    '${ExpectStatus}' != '${EMPTY}'    Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessStatusShow']    ${ExpectStatus}    #流程状态判断
+
+数据库字段值校验
+    [Arguments]    ${sqlStr}    ${expectedValues}
+    [Documentation]    *功能：*
+    ...
+    ...    数据库验证，获取数据库记录各字段值，与预期值比较，全部字段都匹配则通过
+    ...
+    ...    *参数说明：*
+    ...
+    ...    sqlStr：要执行的SQL语句
+    ...
+    ...    expectedValue：期望值，格式为：value1|value2 ,其中value1、value2分别对应字段field1、field2的值;多条记录的情况下，记录与记录之间用||分割
+    ...
+    ...    *示例1：*
+    ...    单条记录
+    ...
+    ...    数据库字段值校验 | select convert(varchar,guid),convert(varchar,logdatetime,121) from dbo.mtlog where id=28 | 4455671212-3434-342323e-34333-3d3dd3|2013-01-12 : 10.12.000
+    ...
+    ...    *示例2：*
+    ...    多条记录
+    ...
+    ...    数据库字段值校验 | convert(varchar,guid),convert(varchar,logdatetime,121) \ from dbo.mtlog where id in (1,2) | 4455671212-3434-342323e-34333-3d3dd3|2013-01-12 : 10.12.000||67676776-3434-342323e-34333-3d3dd3|2013-01-12 : 10.12.000
+    ...
+    ...    *注意事项：*
+    ...
+    ...    对于带有小数位的数字类型字段，由于Robot平台会自动过滤小数点后结尾处的0，
+    ...
+    ...    所以写sql语句时请将该字段转型为字符串(使用convert函数)，防止把数字型数据作为字符串比较时因为0的原因校验失败。
+    ...
+    ...    比如：字段ColumnA的数据库类型为decimal(18,2)，该字段值为100.110，
+    ...    如果sql写成 select ColumnA ，ColumnB from table1 where id=1，
+    ...    Robot平台读取到该字段的值为100.11，
+    ...    而预期值为100.110，则校验通不过；
+    ...
+    ...    正确的写法应该是：
+    ...    select convert(varchar,ColumnA) ,ColumnB from table1 where id=1
+    ...
+    ...    同理，对应日期类型的字段，Robot又会在后面加3个0，所以需要使用convert(varchar,ColumnDatatime,121)转换
+    Connect To Database Using Custom Params    adodbapi    '${conStr}'
+    ${rsCount}    Row Count    ${sqlStr}
+    @{rs}    query    ${sqlStr}
+    Disconnect from Database
+    ${actualValues}    Evaluate    ''
+    ${fieldCount}    Evaluate    len(u'${expectedValues}'.split('||')[0].split('|'))
+    ${fieldCountMinusOne}    Evaluate    int(${fieldCount})-1
+    ${totalItemCount}    Evaluate    ${rsCount}*${fieldCount}
+    : FOR    ${i}    IN RANGE    ${totalItemCount}
+    \    ${currentRowIndex}    Evaluate    ${i}/${fieldCount}
+    \    ${currentFieldIndex}    Evaluate    ${i}%${fieldCount}
+    \    ${actualValues}    run keyword if    ${currentFieldIndex}==${fieldCountMinusOne}    Evaluate    u'${actualValues}'+ u'${rs[${currentRowIndex}][${currentFieldIndex}]}' + '||'
+    \    ...    ELSE    Evaluate    u'${actualValues}'+ u'${rs[${currentRowIndex}][${currentFieldIndex}]}' + '|'
+    ${actualValues}    Evaluate    u'${actualValues}'.rstrip('||')
+    Run Keyword And Continue On Failure    Run Keyword If    '${actualValues}' != '${expectedValues}'    fail    数据库字段值校验未通过：字段期望值为${expectedValues}，但实际值为${actualValues}
+
+校验急催超图标
+    [Arguments]    ${ExpectIcon}
+    [Documentation]    *功能：*
+    ...
+    ...    我办理的流程，校验特定待办流程名称前急，催，超图标
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ExpectIcon : 急，催，超
+    ...
+    ...    *示例：*
+    ...
+    ...    校验急催超图标 | 催
+    #急催超对应的class元素
+    ${IconElement}    Set Variable If    '${ExpectIcon}'=='急'    status processlevel    '${ExpectIcon}'=='催'    status reminder    '${ExpectIcon}'=='超'
+    ...    status timeout
+    #判断对应的元素存在
+    Page Should Contain Element    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] [class='${IconElement}']    message=搜索结果不存在“${ExpectIcon}”图标

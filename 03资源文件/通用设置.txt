@@ -1,0 +1,16 @@
+*** Settings ***
+Resource          ../02关键字封装/关键字引用.txt
+
+*** Keywords ***
+Common_Test_Setup
+    [Arguments]    ${Test Name}    ${Output Dir}
+    [Documentation]    暂时未用
+    ...
+    ...    参考：https://blog.csdn.net/allan_shore_ma/article/details/63391623
+    全局环境参数
+    #设置log级别
+    Set Log Level    TRACE
+    #新建日志目录，不放在默认C盘，不易管理
+    Create Log Path    ${Test Name}    ${Output Dir}
+    #改变截屏存储路径
+    Set Screenshot Directory    %{G_CURRENTLOG}

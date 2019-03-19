@@ -1,5 +1,6 @@
 *** Settings ***
-Test Teardown     OperatingSystem.Run	taskkill /IM "chromedriver.exe" /T /F    # 用例结束后杀chromedriver进程
-Library           Selenium2Library
-Library           requests
-Library           OperatingSystem
+Suite Setup
+Test Setup        全局环境参数
+Test Teardown     OperatingSystem.Run    taskkill /IM "chromedriver.exe" /T /F    # 用例结束后杀chromedriver进程
+Library           Selenium2Library    timeout=20
+Resource          ../02关键字封装/关键字引用.txt

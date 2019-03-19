@@ -7,6 +7,12 @@ Library           Collections
 Library           RequestsLibrary
 Library           OperatingSystem
 Resource          03校验封装.txt
+Library           DatabaseLibrary
+Library           String
+Library           os
+Library           ../04自定义方法/main.py
+Resource          ../03资源文件/通用设置.txt
+Resource          ../03资源文件/通用参数.txt
+Library           AutoItLibrary
 
 *** Variables ***
-${url}            http://10.5.11.42:9961/PubPlatform/Login/ssologin.aspx?targeturl=http%3a%2f%2f10.5.11.42%3a9962    # 9962重构工作流登陆

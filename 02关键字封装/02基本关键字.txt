@@ -7,7 +7,7 @@ Library           AutoItLibrary
     [Arguments]    ${locator}    ${timeout}=None    ${modifier}=False
     [Documentation]    *功能：*
     ...
-    ...    等待元素显示后进行点击
+    ...    等待元素显示后进行点击，如果点击失败，间隔1秒重复点击一次，默认重复点击10次
     ...
     ...    *参数说明：*
     ...
@@ -17,12 +17,20 @@ Library           AutoItLibrary
     ...
     ...    modifier : 添加键盘事件，详见click element
     ...
+    ...    MaximumClicks : 点击失败后重复点击次数，失败后间隔1秒重复点击一次，默认重复点击10次
+    ...
     ...    *示例：*
     ...
     ...    点击元素 | id=easy_search_btn | 10 | CTRL
-    Wait Until Element Is Visible    ${locator}    ${timeout}
-    Wait Until Element Is Not Visible    css=.mp-holder-grid-holder    #加载时的页面元素，有时候点击不到元素因为此元素在顶层，class="mp-holder-grid-holder row-11"
-    Click Element    ${locator}    ${modifier}
+    等待对象可见    ${locator}    ${timeout}
+    Comment    等待对象不可见    css=.mp-holder-grid-holder    #加载时的页面元素，有时候点击不到元素因为此元素在顶层，class="mp-holder-grid-holder row-11"
+    Wait Until Keyword Succeeds    10s    1s    Click Element    ${locator}    ${modifier}
+    Comment    : FOR    ${i}    IN RANGE    ${MaximumClicks}
+    Comment    \    log    第${i+1}次点击
+    Comment    \    ${status}    Run Keyword And Return Status    Click Element    ${locator}    ${modifier}
+    Comment    \    Exit For Loop If    ${status}==True
+    Comment    \    sleep    1
+    Comment    Run Keyword If    ${status}==False    Fail    ${MaximumClicks}次无法成功点击，请检查！
 
 等待加载图标显示后消失
     [Arguments]    ${locator}
@@ -38,7 +46,9 @@ Library           AutoItLibrary
     ...
     ...    等待加载图标显示后消失 | css=div[type='loading']
     Wait Until Element Is Visible    ${locator}
-    Wait Until Element Is Not Visible    ${locator}
+    #出现异常也继续执行，有时候会stale element reference: element is not attached to the page document异常
+    等待对象不可见    ${locator}
+    Comment    Run Keyword And Continue On Failure    Run Keyword    Wait Until Element Is Not Visible    ${locator}
 
 输入
     [Arguments]    ${locator}    ${text}    ${timeout}=None
@@ -57,5 +67,73 @@ Library           AutoItLibrary
     ...    *示例：*
     ...
     ...    输入 | id=easy_search_btn | admin | 10
-    Wait Until Element Is Visible    ${locator}    ${timeout}
-    Input Text    ${locator}    ${text}
+    等待对象可见    ${locator}    ${timeout}
+    Wait Until Keyword Succeeds    10s    1s    Input Text    ${locator}    ${text}
+
+等待操作成功后的提示
+    [Arguments]    ${InfoText}
+    [Documentation]    *功能：*
+    ...
+    ...    用来等待提交成功后msgbox显示出的内容，比如催办成功，作废成功等等提示信息
+    ...
+    ...    *参数说明：*
+    ...
+    ...    InfoText : 具体提示信息
+    ...
+    ...    *示例：*
+    ...
+    ...    等待操作成功后的提示 | 作废成功
+    Wait Until Element Attribute Contains    css=.layui-layer-content.layui-layer-padding    text    ${InfoText}
+    Element Should Contain    css=.layui-layer-content.layui-layer-padding    ${InfoText}
+
+等待窗口切换成功
+    [Arguments]    ${Timeout}=10
+    [Documentation]    *功能：*
+    ...
+    ...    切换新窗口时，根据timeout时间来等待新窗口出现
+    ...
+    ...    *参数说明：*
+    ...
+    ...    Timeout : 新窗口出现的最长超时时间，默认10秒
+    ...
+    ...    *示例：*
+    ...
+    ...    等待窗口切换成功 | 15
+    : FOR    ${i}    IN RANGE    ${Timeout}
+    \    ${status}    Run Keyword And Return Status    select window    NEW    #切换窗口失败后返回状态
+    \    log    第${i+1}次切换窗口
+    \    Exit For Loop If    ${status}==True
+    \    sleep    1
+    Run Keyword If    ${status}==False    Fail    ${Timeout}秒内无法切换新窗口，请检查！
+    Comment    Wait Until Keyword Succeeds    10s    1s    select window    NEW
+
+等待对象不可见
+    [Arguments]    ${locator}    ${timeout}=None
+    [Documentation]    *功能：*
+    ...
+    ...    等待对象不显示在屏幕页面上
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locator : 元素定位
+    ...
+    ...    *示例：*
+    ...
+    ...    等待对象不可见 | id=
+    Wait Until Keyword Succeeds    10s    1s    Wait Until Element Is Not Visible    ${locator}    ${timeout}
+    Comment    Run Keyword And Continue On Failure    Run Keyword    Wait Until Element Is Not Visible    ${locator}    Fail    等待${locator}元素不可见失败
+
+等待对象可见
+    [Arguments]    ${locator}    ${timeout}=None
+    [Documentation]    *功能：*
+    ...
+    ...    等待对象显示在屏幕页面上
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locator : 元素定位
+    ...
+    ...    *示例：*
+    ...
+    ...    等待对象不可见 | id=
+    Wait Until Keyword Succeeds    10s    1s    Wait Until Element Is Visible    ${locator}    ${timeout}

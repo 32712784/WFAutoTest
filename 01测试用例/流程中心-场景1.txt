@@ -2,21 +2,16 @@
 Documentation     场景1
 ...               数据准备：
 ...               流程模板（A发起-A审批-A手动归档）
-Library           Selenium2Library    timeout=20
-Library           os
 Resource          ../02关键字封装/关键字引用.txt
-Library           re
-Library           String
+Library           Selenium2Library    timeout=20
 
 *** Variables ***
-${wf_url}         http://10.5.11.4:11053/backend/processlist/center.aspx?classname=handlelist&type=ProcessTodoList&activeNav=ProcessTodoList
-${流程模板}           test集中发起
 
 *** Test Cases ***
 01-新建流程并保存草稿
     [Documentation]    新建流程并保存草稿
     登录    ${wf_url}    admin    1
-    新建流程    ${流程模板}    SaveDraft=保存草稿
+    新建流程    ${ProcessModule_1}    SaveDraft=保存草稿
     点击元素    css=div[type='dialog'] .layui-layer-btn1
     Wait For Condition    return document.title == '流程草稿'
     Title Should Be    流程草稿
@@ -32,7 +27,6 @@ ${流程模板}           test集中发起
     [Documentation]    验证保存草稿成功，并通过我发起的流程-草稿查询出来
     登录    ${wf_url}    admin    1
     我发起的流程查询    草稿    ${ProcessName}
-    sleep    1
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']    ${ProcessName}    #校验流程名称
     Close Browser
 
@@ -40,8 +34,7 @@ ${流程模板}           test集中发起
     [Documentation]    通过我发起的流程-草稿进入流程并发起，验证发起成功
     登录    ${wf_url}    admin    1
     我发起的流程查询    草稿    ${ProcessName}
-    点击元素    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
-    ${handle}    select window    NEW    #切换到新开窗口
+    查询后的操作    发起
     发起操作
     Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
     select window    Main
@@ -52,7 +45,6 @@ ${流程模板}           test集中发起
     [Documentation]    通过我发起的流程--处理中，搜索上个用例发起的流程，校验搜索结果
     登录    ${wf_url}    admin    1
     我发起的流程查询    处理中    ${ProcessName}
-    sleep    1
     ${SearchCount}    Get Element Count    css=.layui-table-body.layui-table-main tr    #获取搜索结果数量
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']    ${ProcessName}    #校验流程名称
     Should Be Equal    '${SearchCount}'    '1'    #搜索结果只有一条
@@ -62,7 +54,6 @@ ${流程模板}           test集中发起
     [Documentation]    通过我办理的流程--待办，搜索出有发起后的待办流程
     登录    ${wf_url}    admin    1
     我办理的流程查询    待办    ${ProcessName}
-    sleep    1
     ${SearchCount}    Get Element Count    css=.layui-table-body.layui-table-main tr    #获取搜索结果数量
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']    ${ProcessName}    #校验流程名称
     Should Be Equal    '${SearchCount}'    '1'    #搜索结果只有一条
@@ -83,7 +74,6 @@ ${流程模板}           test集中发起
     [Documentation]    通过我发起的流程--已通过，验证上一步审批到归档步骤，状态为已通过
     登录    ${wf_url}    admin    1
     我发起的流程查询    已通过    ${ProcessName}
-    sleep    1
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers
 
@@ -91,7 +81,6 @@ ${流程模板}           test集中发起
     [Documentation]    进入我办理的流程--已办，验证审批后流程进入已办
     登录    ${wf_url}    admin    1
     我办理的流程查询    已办    ${ProcessName}
-    sleep    1
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers
 
@@ -110,6 +99,5 @@ ${流程模板}           test集中发起
     [Documentation]    进入我发起的流程--已归档，验证上一步归档的流程在此列表
     登录    ${wf_url}    admin    1
     我发起的流程查询    已归档    ${ProcessName}
-    sleep    1
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers
