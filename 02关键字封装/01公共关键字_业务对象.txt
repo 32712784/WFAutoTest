@@ -1,0 +1,27 @@
+*** Settings ***
+Resource          ../03资源文件/通用参数.txt
+Resource          关键字引用.txt
+
+*** Keywords ***
+选择业务类型
+    [Arguments]    ${locator}    ${BusinessTypeName}
+    [Documentation]    *功能：*
+    ...
+    ...    在选择业务类型弹窗输入业务类型后选择
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locator : 业务类型的+图标元素
+    ...
+    ...    BusinessTypeName : 业务类型名称，输入全称
+    ...
+    ...    *示例：*
+    ...
+    ...    选择业务类型 | css=.wrap-selectAuditors.cf .iconfont.icon-add.color-blue | 价格制定审批
+    点击    ${locator}    #点击业务类型的+号
+    切换Frame    //iframe[contains(@src,'/backend/publicpage/treegrid-select.aspx')]    #切换选择业务类型frame
+    输入    id=Name    ${BusinessTypeName}    #输入业务类型
+    点击    id=easy_search_btn    #点击搜索
+    点击    //*[@id='module_tree']//a[text()='${BusinessTypeName}']    #选中与业务类型名称相同的搜索结果
+    Unselect Frame
+    点击    xpath=//iframe[contains(@src,'/backend/publicpage/treegrid-select.aspx')]/../..//*[@class='layui-layer-btn0']    #点击确定

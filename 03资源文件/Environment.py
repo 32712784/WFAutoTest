@@ -1,7 +1,7 @@
 #coding:utf-8
 #------------------------------------------------------------------------------------------------------------------------------
 #登陆工作流URL
-wf_url = "http://10.5.11.4:11053/backend/processlist/center.aspx?classname=handlelist&type=ProcessTodoList&activeNav=ProcessTodoList"
+wf_url = "http://27.17.30.140:11053/backend/processlist/center.aspx?classname=handlelist&type=ProcessTodoList&activeNav=ProcessTodoList"
 
 #------------------------------------------------------------------------------------------------------------------------------
 #数据库连接字符串，sqlserver连接字符串参考：http://www.asp101.com/articles/john/connstring/default.asp
@@ -22,3 +22,7 @@ ProcessModule_1 = u"三步手动归档"
 用例范围：流程中心-场景4
 '''
 ProcessModule_2 = u"两步手动归档"
+
+#------------------------------------------------------------------------------------------------------------------------------
+#User2:用于设定抄送人，重置责任人，监控人，传阅人
+User2 = u"王胜成"

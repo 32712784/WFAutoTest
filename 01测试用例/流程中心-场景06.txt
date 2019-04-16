@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation     新建流程收藏和移除收藏及搜索模板功能
 ...               数据准备：
-...               1、流程模板（A发起-A手动归档）
+...               1、流程模板（A发起-A手动归档）--ProcessModule_1
 Resource          ../02关键字封装/关键字引用.txt
 Library           Selenium2Library    timeout=20
 
@@ -11,32 +11,32 @@ Library           Selenium2Library    timeout=20
 01-新建流程-收藏流程模板功能
     [Documentation]    新建流程--全部流程，点击收藏，校验收藏成功
     登录    ${wf_url}    admin    1
-    点击元素    css=a[data-nav="newProcess"]    #点击新建流程
-    点击元素    id=tab_all    #点击全部流程页签
-    点击元素    xpath=//*[@id='tab_item_all']//*[@title='${ProcessModule_2}']/../*[@class='btn-handle']    #在全部流程页签下点击收藏图标
+    点击    css=a[data-nav="newProcess"]    #点击新建流程
+    点击    id=tab_all    #点击全部流程页签
+    点击    xpath=//*[@id='tab_item_all']//*[@title='${ProcessModule_2}']/../*[@class='btn-handle']    #在全部流程页签下点击收藏图标
     等待操作成功后的提示    收藏成功
-    点击元素    id=tab_favorites    #点击我的收藏
+    点击    id=tab_favorites    #点击我的收藏
     Element Should Be Visible    css=#favoriteProcess .favorites-process > [title='${ProcessModule_2}']    #检查我的收藏下存在刚刚收藏的模板
     Close All Browsers
 
 02-新建流程-移除收藏流程模板功能
     [Documentation]    新建流程--全部流程，点击取消收藏，校验取消收藏成功
     登录    ${wf_url}    admin    1
-    点击元素    css=a[data-nav="newProcess"]    #点击新建流程
-    点击元素    id=tab_favorites    #点击我的收藏页签
-    点击元素    xpath=//*[@id='tab_item_favorites']//*[@title='${ProcessModule_2}']/../*[@class='btn-handle']    #在我的收藏页签下点击取消收藏图标
+    点击    css=a[data-nav="newProcess"]    #点击新建流程
+    点击    id=tab_favorites    #点击我的收藏页签
+    点击    xpath=//*[@id='tab_item_favorites']//*[@title='${ProcessModule_2}']/../*[@class='btn-handle']    #在我的收藏页签下点击取消收藏图标
     等待操作成功后的提示    移除成功
-    点击元素    id=tab_favorites    #点击我的收藏
+    点击    id=tab_favorites    #点击我的收藏
     Element Should Not Be Visible    css=#favoriteProcess .favorites-process > [title='${ProcessModule_2}']    #检查我的收藏下不存在刚刚取消收藏的模板
     Close All Browsers
 
 03-新建流程-搜索流程模板功能
     [Documentation]    新建流程--全部流程，点击收藏，切换到我的收藏
     登录    ${wf_url}    admin    1
-    点击元素    css=a[data-nav="newProcess"]    #点击新建流程
-    点击元素    id=tab_all    #点击全部流程页签
+    点击    css=a[data-nav="newProcess"]    #点击新建流程
+    点击    id=tab_all    #点击全部流程页签
     输入    id=eazy_search_box    ${ProcessModule_2}    #在全部流程页签下点击收藏图标
-    点击元素    id=easy_search_btn    #点击搜索
+    点击    id=easy_search_btn    #点击搜索
     Wait For Condition    return $(".nofavorites-process").size() == 1    #等待搜索结果只有1
     ${moduleName}    Get Element Attribute    css=.nofavorites-process .process-name    title
     ${ModuleCount}    Get Element count    css=.nofavorites-process .process-name

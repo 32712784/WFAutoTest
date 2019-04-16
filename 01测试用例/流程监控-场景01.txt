@@ -1,0 +1,76 @@
+*** Settings ***
+Documentation     使用处理中流程实例测试流程监控的功能，流程监控传阅，重置责任人，流程调整（仅保存），重设监控人，作废流程。
+...               数据准备：
+...               1、流程模板（A发起-A审批-A手动归档）--ProcessModule_1；
+...               2、传阅人、被重置责任人、被重置监控人--User2
+Resource          ../02关键字封装/关键字引用.txt
+Library           Selenium2Library    timeout=20
+
+*** Variables ***
+
+*** Test Cases ***
+01-发起流程
+    [Documentation]    数据准备用例，发起流程
+    登录    ${wf_url}    admin    1
+    新建流程    ${ProcessModule_1}
+    Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
+    ${ProcessName}    Get Text    id=js-title
+    ${UserName}    Get Text    css=div[data-node-status='3'] .inline-block.align-middle.handler-name
+    Set Global Variable    ${ProcessName}
+    Set Global Variable    ${UserName}
+    select window    Main
+    校验流程状态    ${ProcessName}    处理中
+    Close All Browsers
+
+02-流程监控--处理中，流程传阅
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    处理中    两步手动归档-0024
+    流程监控_传阅    两步手动归档-0024    admin
+    等待操作成功后的提示    传阅成功
+    Element Should Contain    css=.layui-layer-content.layui-layer-padding    传阅成功
+    Close All Browsers
+
+03-传阅人查询到传阅记录
+    登录    ${wf_url}    admin    1
+
+04-流程监控--处理中，重设当前责任人
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    处理中    两步手动归档-0024
+    流程监控_重置责任人    两步手动归档-0024    王胜成
+    等待操作成功后的提示    重设责任人成功
+    sleep    3
+    Close All Browsers
+
+05-被重置责任人查询到待办记录
+
+06-流程监控--处理中，调整流程保存
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    处理中    两步手动归档-0024
+    流程监控_调整流程    两步手动归档-0024
+    等待操作成功后的提示    保存成功
+    sleep    2
+    Close All Browsers
+
+07-流程监控--处理中，重设监控人
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    处理中    两步手动归档-0024
+    流程监控_重设监控人    两步手动归档-0024    admin
+    等待操作成功后的提示    重设监控人成功
+    sleep    2
+    Close All Browsers
+
+08-流程监控--处理中，作废流程
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    处理中    三步手动归档-0217
+    流程监控_作废流程    三步手动归档-0217    AutoTest作废流程
+    等待操作成功后的提示    作废成功
+    sleep    2
+    Close All Browsers
+
+09-流程监控--全部，删除已作废流程
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    全部    三步手动归档-0217
+    流程监控_删除流程    三步手动归档-0217
+    等待操作成功后的提示    删除成功
+    sleep    2
+    Close All Browsers

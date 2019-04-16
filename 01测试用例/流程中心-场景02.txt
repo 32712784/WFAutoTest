@@ -1,8 +1,8 @@
 *** Settings ***
 Documentation     场景2
 ...               数据准备：
-...               1、流程模板（A发起-A审批-A手动归档）
-...               2、抄送人B
+...               1、流程模板（A发起-A审批-A手动归档）--ProcessModule_1;
+...               2、抄送人B --User2
 Resource          ../02关键字封装/关键字引用.txt
 Library           Selenium2Library    timeout=20
 
@@ -16,8 +16,9 @@ ${抄送人}            王胜成
     新建流程    ${ProcessModule_1}    ${抄送人}
     Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
     ${ProcessName}    Get Text    id=js-title
+    ${UserName}    Get Text    css=div[data-node-status='3'] .inline-block.align-middle.handler-name
     Set Global Variable    ${ProcessName}
-    log    ${ProcessName}
+    Set Global Variable    ${UserName}
     select window    Main
     校验流程状态    ${ProcessName}    处理中
     Close All Browsers
@@ -33,10 +34,10 @@ ${抄送人}            王胜成
     [Documentation]    对流程进行传阅操作，并验证传阅成功
     登录    ${wf_url}    admin    1
     我发起的流程查询    处理中    ${ProcessName}
-    点击元素    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a    #点击流程名称打开审批页面
+    点击    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a    #点击流程名称打开审批页面
     ${handle}    select window    NEW    #切换到新开窗口
     流程审批更多操作    传阅    admin
-    Wait Until Element Attribute Contains    css=.layui-layer-content.layui-layer-padding    text    传阅成功
+    等待操作成功后的提示    传阅成功
     Element Should Contain    css=.layui-layer-content.layui-layer-padding    传阅成功
     Close All Browsers
 
@@ -48,15 +49,15 @@ ${抄送人}            王胜成
     Close All Browsers
 
 05-我办理的流程-全部
-    [Documentation]    我办理的流程-全部，验证能在此列表搜索到此场景的流程
+    [Documentation]    我办理的流程-全部，验证能在此列表搜索到此场景的流程，输入所有条件进行查询
     登录    ${wf_url}    admin    1
-    我办理的流程查询    全部    ${ProcessName}
+    我办理的流程查询    全部    ${ProcessName}    StartDate=now    OwnerName=${UserName}
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers
 
 06-我发起的流程-全部
-    [Documentation]    我发起的流程-全部，验证能在此列表搜索到此场景的流程
+    [Documentation]    我发起的流程-全部，验证能在此列表搜索到此场景的流程，输入所有条件进行查询
     登录    ${wf_url}    admin    1
-    我发起的流程查询    全部    ${ProcessName}
+    我发起的流程查询    全部    ${ProcessName}    StartDate=now
     我发起和办理的流程查询校验    ${ProcessName}    1
     Close All Browsers

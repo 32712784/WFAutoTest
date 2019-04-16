@@ -1,18 +1,28 @@
 *** Settings ***
-Resource          01业务关键字.txt
+Resource          01公共关键字_流程中心.txt
+Resource          01公共关键字_流程监控.txt
+Resource          01公共关键字_流程查询.txt
+Resource          01公共关键字_通用控件.txt
+Resource          01公共关键字_流程代理.txt
+Resource          01公共关键字_文档管理.txt
+Resource          01公共关键字_重置责任人.txt
+Resource          01公共关键字_业务对象.txt
+Resource          01公共关键字_流程定义.txt
+Resource          01公共关键字_参数配置.txt
 Resource          02基本关键字.txt
+Resource          ../03资源文件/通用设置.txt
+Resource          ../03资源文件/通用参数.txt
+Resource          03校验封装.txt
 Resource          04API关键字.txt
 Library           Selenium2Library
 Library           Collections
 Library           RequestsLibrary
 Library           OperatingSystem
-Resource          03校验封装.txt
 Library           DatabaseLibrary
 Library           String
 Library           os
 Library           ../04自定义方法/main.py
-Resource          ../03资源文件/通用设置.txt
-Resource          ../03资源文件/通用参数.txt
 Library           AutoItLibrary
+Library           DateTime
 
 *** Variables ***

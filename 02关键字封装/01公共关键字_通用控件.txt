@@ -1,0 +1,70 @@
+*** Settings ***
+Resource          ../03资源文件/通用参数.txt
+Resource          关键字引用.txt
+
+*** Variables ***
+
+*** Keywords ***
+登录
+    [Arguments]    ${login_url}    ${userName}    ${password}    ${Remote_url}=False
+    [Documentation]    *功能：*
+    ...
+    ...    登录ERP系统
+    ...
+    ...    *参数说明：*
+    ...
+    ...    userName : 用户名
+    ...
+    ...    password ：登录密码
+    ...
+    ...    url : ERP系统地址（在通用参数配置配置）
+    ...
+    ...    companyPath：登录之后选择公司，父子路径之间用/分割（在通用参数配置配置）
+    ...
+    ...    Remote_url：远程执行地址
+    ...
+    ...    *示例：*
+    ...
+    ...    登录 | admin | 1 | http://192.168.236.3:4444/wd/hub
+    open browser    ${login_url}    chrome    remote_url=${Remote_url}
+    Maximize Browser Window
+    Comment    Set Window Size    1360    768
+    Wait For Condition    return jQuery.active==0    # 等待页面加载完成
+    input text    user    ${userName}
+    input password    pwd    ${password}
+    click button    submit
+
+添加责任人
+    [Arguments]    ${locator}    ${auditorCode}    ${Page}=${EMPTY}
+    [Documentation]    *功能：*
+    ...
+    ...    点击责任人+号控件，添加责任人
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locator ：责任人控件的+号元素
+    ...
+    ...    auditor : 用户code
+    ...
+    ...    page：选择责任人Frame所在的页面，默认审批Approve页面。还有一个在后台backend页面
+    ...
+    ...    *示例：*
+    ...
+    ...    添加责任人 | css=#js-NeedOption #js-select-auditors | admin
+    ...
+    ...    添加责任人 | css=#js-NeedOption #js-select-auditors | admin | Page=backend
+    点击    ${locator}    #点击添加按钮
+    Unselect Frame
+    #Frame路径,传阅时会有两个iframe，默认为审批页面的frame
+    ${FramePath}    Set Variable If    '${Page}'=='${EMPTY}'    //iframe[contains(@src,'/wf/AppService/ApprovePage/SelectAuditors')]    //iframe[contains(@src,'/backend/publicpage/SelectAuditorsCenter.aspx')]
+    #如果page为空，默认切换审批页面选择责任人的frame，否则切换到后台选择责任人页面frame
+    Run Keyword If    '${Page}'=='${EMPTY}'    切换Frame    ${FramePath}
+    ...    ELSE    切换Frame    ${FramePath}
+    等待对象可见    css=.jstree-anchor    20    #先等组织架构加载出来
+    Execute Javascript    $("#selectProcessAuditors .tt-hint").removeAttr('readonly')
+    点击    css=#selectProcessAuditors .tt-input    #点击输入栏
+    输入    css=#selectProcessAuditors .tt-input    ${auditorCode}
+    点击    xpath=//*[@class='tt-suggestion tt-selectable'][1]    #显示责任人组织后点击选择
+    Unselect Frame
+    #根据添加责任人frame路径点击确认按钮
+    点击    xpath=${FramePath}/../..//*[@class='layui-layer-btn0']

@@ -1,7 +1,7 @@
 *** Settings ***
-Documentation     场景2-2：在我发起的流程-已通过，操作下的按钮处理流程，并在各个场景能查询到结果。
+Documentation     场景：在我发起的流程-处理中，操作下的按钮处理流程，并在各个场景能查询到结果。
 ...               数据准备：
-...               1、流程模板（A发起-A手动归档）
+...               1、流程模板（A发起-A审批-A手动归档）--ProcessModule_1
 Resource          ../02关键字封装/关键字引用.txt
 Library           Selenium2Library    timeout=20
 
@@ -11,20 +11,21 @@ Library           Selenium2Library    timeout=20
 01-发起流程
     [Documentation]    数据准备用例，发起流程
     登录    ${wf_url}    admin    1
-    新建流程    ${ProcessModule_2}
+    新建流程    ${ProcessModule_1}
     Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
     ${ProcessName}    Get Text    id=js-title
+    ${UserName}    Get Text    css=div[data-node-status='3'] .inline-block.align-middle.handler-name
     Set Global Variable    ${ProcessName}
-    log    ${ProcessName}
+    Set Global Variable    ${UserName}
     select window    Main
-    校验流程状态    ${ProcessName}    已通过
+    校验流程状态    ${ProcessName}    处理中
     Close All Browsers
 
-02-我发起的流程-已通过-催办
-    [Documentation]    从我发起的流程-已通过页签，查询出发起的流程，通过操作列点击催办按钮进行催办
+02-我发起的流程-处理中-催办
+    [Documentation]    从我发起的流程-处理中页签，查询出发起的流程，通过操作列点击催办按钮进行催办
     登录    ${wf_url}    admin    1
-    我发起的流程查询    已通过    ${ProcessName}
-    #定义催办信息，方便查询唯一催办
+    Comment    ${ProcessName}    Set Variable    test集中发起-0136
+    我发起的流程查询    处理中    ${ProcessName}
     ${randomString}    Evaluate    "".join(random.sample(string.letters+string.digits,10))    random,string
     ${remindString}    Evaluate    u'${randomString}'u'${ProcessName}'
     查询后的操作    催办    ${remindString}
@@ -35,35 +36,40 @@ Library           Selenium2Library    timeout=20
 03-我办理的流程-催办图标
     [Documentation]    我办理的流程-待办，验证能在此列表搜索已催办的流程有催办图标
     登录    ${wf_url}    admin    1
+    Comment    ${ProcessName}    Set Variable    test集中发起-0163
     我办理的流程查询    待办    ${ProcessName}
     校验急催超图标    催
     Close All Browsers
 
-04-我发起的流程-已通过-作废
-    [Documentation]    从我发起的流程-已通过页签，查询出发起的流程，通过操作列点击作废按钮进行作废
+04-我发起的流程-处理中-作废
+    [Documentation]    从我发起的流程-处理中页签，查询出发起的流程，通过操作列点击作废按钮进行作废
     登录    ${wf_url}    admin    1
-    我发起的流程查询    已通过    ${ProcessName}
+    Comment    ${ProcessName}    Set Variable    三步手动归档-0210
+    我发起的流程查询    处理中    ${ProcessName}
     查询后的操作    作废    AutoTest作废流程
     等待操作成功后的提示    作废成功
     数据库字段值校验    SELECT ProcessStatus FROM dbo.myWorkflowProcessEntity WHERE ProcessName = '${ProcessName}'    -2
     Close All Browsers
 
 05-我办理的流程--全部，搜索
-    [Documentation]    我办理的流程-全部，验证能在此列表搜索到作废的流程，且状态正确
+    [Documentation]    我办理的流程-全部，通过流程名称和发起人搜索，验证能在此列表搜索到作废的流程，且状态正确
     登录    ${wf_url}    admin    1
-    我办理的流程查询    全部    ${ProcessName}
+    Comment    ${ProcessName}    Set Variable    test集中发起-0162
+    我办理的流程查询    全部    ${ProcessName}    OwnerName=${UserName}
     我发起和办理的流程查询校验    ${ProcessName}    1    已作废
     Close All Browsers
 
 06-我发起的流程--全部，搜索
-    [Documentation]    我发起的流程-全部，验证能在此列表搜索到作废的流程，且状态正确
+    [Documentation]    我发起的流程-全部，通过流程名称和起始时间搜索，验证能在此列表搜索到作废的流程，且状态正确
     登录    ${wf_url}    admin    1
-    我发起的流程查询    全部    ${ProcessName}
+    Comment    ${ProcessName}    Set Variable    test集中发起-0162
+    我发起的流程查询    全部    ${ProcessName}    StartDate=now
     我发起和办理的流程查询校验    ${ProcessName}    1    已作废
     Close All Browsers
 
 07-流程监控查询状态
     [Documentation]    从流程监控查询已作废的流程状态
     登录    ${wf_url}    admin    1
+    Comment    ${ProcessName}    Set Variable    test集中发起-0162
     校验流程状态    ${ProcessName}    已作废
     Close All Browsers

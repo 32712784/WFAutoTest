@@ -1,0 +1,3 @@
+*** Settings ***
+Resource          ../03资源文件/通用参数.txt
+Resource          关键字引用.txt

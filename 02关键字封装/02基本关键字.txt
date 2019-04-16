@@ -3,7 +3,7 @@ Library           Selenium2Library
 Library           AutoItLibrary
 
 *** Keywords ***
-点击元素
+点击
     [Arguments]    ${locator}    ${timeout}=None    ${modifier}=False
     [Documentation]    *功能：*
     ...
@@ -16,8 +16,6 @@ Library           AutoItLibrary
     ...    timeout ：超时时间，最长等待多久后超时失败
     ...
     ...    modifier : 添加键盘事件，详见click element
-    ...
-    ...    MaximumClicks : 点击失败后重复点击次数，失败后间隔1秒重复点击一次，默认重复点击10次
     ...
     ...    *示例：*
     ...
@@ -119,7 +117,7 @@ Library           AutoItLibrary
     ...
     ...    *示例：*
     ...
-    ...    等待对象不可见 | id=
+    ...    等待对象属性包含 | id=easy_search_btn
     Wait Until Keyword Succeeds    10s    1s    Wait Until Element Is Not Visible    ${locator}    ${timeout}
     Comment    Run Keyword And Continue On Failure    Run Keyword    Wait Until Element Is Not Visible    ${locator}    Fail    等待${locator}元素不可见失败
 
@@ -135,5 +133,27 @@ Library           AutoItLibrary
     ...
     ...    *示例：*
     ...
-    ...    等待对象不可见 | id=
+    ...    等待对象不可见 | id=easy_search_btn
     Wait Until Keyword Succeeds    10s    1s    Wait Until Element Is Visible    ${locator}    ${timeout}
+
+切换Frame
+    [Arguments]    ${locator}    ${timeout}=None
+    等待对象可见    ${locator}    ${timeout}
+    Select Frame    ${locator}
+    sleep    1
+
+等待对象属性包含
+    [Arguments]    ${locator}    ${attr}    ${contains_val}    ${timeout}=None
+    [Documentation]    *功能：*
+    ...
+    ...    等待对象属性值包含，或者等待对象text包含
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locator : 元素定位
+    ...
+    ...    *示例：*
+    ...
+    ...    等待对象不可见 | id=
+    #防止出现StaleElementReferenceException: Message: stale element reference: element is not attached to the page document
+    Wait Until Keyword Succeeds    10s    1s    Wait Until Element Attribute Contains    ${locator}    ${attr}    ${contains_val}

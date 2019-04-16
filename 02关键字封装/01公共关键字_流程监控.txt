@@ -1,0 +1,210 @@
+*** Settings ***
+Resource          ../03资源文件/通用参数.txt
+Resource          关键字引用.txt
+
+*** Keywords ***
+流程监控_搜索
+    [Arguments]    ${SearchModule}    ${ProcessName}    ${searchResultCount}=1    ${StepName}=${EMPTY}    ${UserName}=${EMPTY}    ${StartDate}=${EMPTY}
+    ...    ${FinishDate}=${EMPTY}
+    [Documentation]    *功能：*
+    ...
+    ...    流程监控下的对应页签模块查询流程实例
+    ...
+    ...    *参数说明：*
+    ...
+    ...    SearchModule ：流程监控的模块名称：处理中，草稿，已归档，归档异常，全部
+    ...
+    ...    ProcessName : 输入需要查询的流程名称
+    ...
+    ...    searchResultCount：查询结果数量，默认为1，草稿删除后查询需要传入0
+    ...
+    ...    StepName：当前步骤
+    ...
+    ...    UserName：当前责任人
+    ...
+    ...    StartDate：展开筛选后的开始日期，只要StartDate=任意值，都会开展日期筛选，暂时起始时间都是当前日期，方便进行查询结果校验
+    ...
+    ...    FinishDate：展开筛选后的归档日期，只要FinishDate=任意值，都会开展日期筛选，暂时归档起始时间都是当前日期，方便进行查询结果校验
+    ...
+    ...    *示例：*
+    ...
+    ...    流程监控_搜索 | 处理中 | 价格制定审批-0007 | StepName=归档 | UserName=系统管理员 | StartDate=now | FinishDate=now
+    #根据我发起的流程页签，设置对应的页签元素
+    ${data-listtype}    Set Variable If    '${SearchModule}' == '处理中'    ProcessWatchActiveList    '${SearchModule}' == '草稿'    ProcessWatchDraftList    '${SearchModule}' == '已归档'
+    ...    ProcessWatchBookList    '${SearchModule}' == '归档异常'    ProcessWatchBookExceptionList    '${SearchModule}' == '全部'    ProcessWatchAllList
+    等待对象可见    id=easy_search_btn    #等待搜索按钮出现
+    点击    css=a[data-nav="ProcessWatchActiveList"]    #点击流程监控
+    等待对象可见    css=.layui-laypage-count    #等待共XX条元素出现
+    点击    css=li[data-listtype='${data-listtype}']    #点击处理中，草稿，已归档，归档异常，全部等页签
+    流程监控_搜索输入    ${ProcessName}    ${StepName}    ${UserName}    ${StartDate}    ${FinishDate}
+    #如果起始日，归档时间，当前步骤，当前责任人一项或多项不为空，高级搜索输入后，点击展开后的搜索按钮，否则点击普通搜索按钮
+    Run Keyword If    '${StartDate}' != '${EMPTY}' or '${StepName}'!='${EMPTY}' or '${UserName}'!='${EMPTY}' or '${FinishDate}'!='${EMPTY}'    点击    id=advance_search_btn
+    ...    ELSE    点击    id=easy_search_btn
+    #等待搜索结果只有一条记录
+    Run Keyword If    '${searchResultCount}' == '1'    Wait For Condition    return $(".layui-table-body.layui-table-main td[data-field='ProcessName']").size() == 1
+    ...    ELSE    等待对象可见    css=.layui-none
+    sleep    1
+
+流程监控_搜索输入
+    [Arguments]    ${ProcessName}    ${StepName}=${EMPTY}    ${UserName}=${EMPTY}    ${StartDate}=${EMPTY}    ${FinishDate}=${EMPTY}
+    [Documentation]    *功能：*
+    ...
+    ...    流程监控下的所有搜索条件输入
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ProcessName : 输入需要查询的流程名称，此处也可以输入发起人名称
+    ...
+    ...    StepName：当前步骤
+    ...
+    ...    UserName：处理中的当前责任人、归档异常的归档人
+    ...
+    ...    StartDate：展开筛选后的开始日期，只要StartDate=任意值，都会开展日期筛选，暂时起始时间都是当前日期，方便进行查询结果校验
+    ...
+    ...    FinishDate：展开筛选后的归档日期，只要FinishDate=任意值，都会开展日期筛选，暂时归档起始时间都是当前日期，方便进行查询结果校验
+    ...
+    ...    *示例：*
+    ...
+    ...    流程监控_搜索输入 | 价格制定审批-0007 | StepName=归档 | UserName=系统管理员 | StartDate=now | FinishDate=now
+    ${CurTime}    Get Current Date    result_format=datetime
+    ${CurTime}    evaluate    '${CurTime}'.split(' ')[0]
+    输入    id=processName__OwnerName    ${ProcessName}
+    #如果起始日，当前步骤，当前责任人一项或多项不为空，点击展开筛选
+    Run Keyword If    '${StartDate}' != '${EMPTY}' or '${StepName}'!='${EMPTY}' or '${UserName}'!='${EMPTY}' or '${FinishDate}'!='${EMPTY}'    点击    switch_search_btn
+    #起始日不为空，输入起始日
+    Run Keyword If    '${StartDate}' != '${EMPTY}'    Execute Javascript    $("#InitiateDateTime_Begin").text('${CurTime}');$("#InitiateDateTime_End").text('${CurTime}')
+    #归档日不为空，输入归档日
+    Run Keyword If    '${FinishDate}' != '${EMPTY}'    Execute Javascript    $("#FinishDateTime_Begin").text('${CurTime}');$("#FinishDateTime_Begin").text('${CurTime}')
+    #当前步骤不为空，输入
+    Run Keyword If    '${StepName}'!='${EMPTY}'    输入    id=StepName    ${StepName}
+    #当前责任人不为空，输入
+    Run Keyword If    '${UserName}'!='${EMPTY}'    输入    id=CurAuditorNames    ${UserName}
+
+流程监控_传阅
+    [Arguments]    ${ProcessName}    ${auditorCode}
+    [Documentation]    *功能：*
+    ...
+    ...    流程监控的传阅
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ProcessName：流程名称
+    ...
+    ...    auditorCode ：传阅人
+    ...
+    ...    *示例：*
+    ...
+    ...    流程监控_传阅 | 手动归档-0024 |admin
+    点击    //*[@class='layui-table-body layui-table-main']//td[@title='${ProcessName}']/../*[@data-field='0']    #选择与搜索名称相同的流程
+    点击    id=batchCirculate    #点击传阅按钮
+    切换Frame    //iframe[contains(@src,'/backend/processlist/CirculateProcessDialog.aspx')]    #切换到传阅frame
+    添加责任人    css=#auditorSel .js-select-auditors    ${auditorCode}    Page=backend    #添加传阅人
+    点击    //iframe[contains(@src,'/backend/processlist/CirculateProcessDialog.aspx')]/../..//*[@class='layui-layer-btn0']    #确认传阅
+
+流程监控_重置责任人
+    [Arguments]    ${ProcessName}    ${auditorCode}
+    [Documentation]    *功能：*
+    ...
+    ...    流程监控的重置责任人
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ProcessName：流程名称
+    ...
+    ...    auditorCode：用户code或者用户名
+    ...    *示例：*
+    ...
+    ...    流程监控_传阅 | 手动归档-0024 | admin
+    点击    //*[@class='layui-table-body layui-table-main']//td[@title='${ProcessName}']/../*[@data-field='tool']//a[@lay-event='resetAuditor']    #选择与搜索名称相同的流程
+    切换Frame    //iframe[contains(@src,'/backend/processlist/ResetAuditorDialog.aspx')]    #切换到重置责任人frame
+    添加责任人    css=.js-selectAuditor .js-select-auditors    ${auditorCode}    Page=backend
+    点击    //iframe[contains(@src,'/backend/processlist/ResetAuditorDialog.aspx')]/../..//*[@class='layui-layer-btn0']    #确认重置
+
+流程监控_调整流程
+    [Arguments]    ${ProcessName}
+    [Documentation]    *功能：*
+    ...
+    ...    流程监控的流程调整
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ProcessName：流程名称
+    ...
+    ...    *示例：*
+    ...
+    ...    流程监控_调整流程 | 手动归档-0024
+    点击    //*[@class='layui-table-body layui-table-main']//td[@title='${ProcessName}']/../*[@data-field='tool']//a[@lay-event='modifiyProcess']    #选择与搜索名称相同的流程
+    等待窗口切换成功
+    点击    css=[data-key='stepGrid']    #点击列表展示
+    点击    css=.layui-footer.footer .layui-layer-btn0    #点击保存
+
+流程监控_重设监控人
+    [Arguments]    ${ProcessName}    ${auditorCode}
+    [Documentation]    *功能：*
+    ...
+    ...    流程监控的重设监控人
+    ...
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ProcessName：流程名称
+    ...
+    ...    auditorCode ：监控人
+    ...
+    ...    *示例：*
+    ...
+    ...    流程监控_重设监控人 | 手动归档-0024 |admin
+    等待对象可见    //*[@class='layui-table-body layui-table-main']//td[@title='${ProcessName}']/../*[@data-field='tool']    #等待搜索名称相同的流程操作按钮出现
+    Execute Javascript    $(".layui-table-body.layui-table-main td[title='${ProcessName}']").parent().find("[data-field='tool'] [lay-event='resetWatcher']").click()    #选择与搜索名称相同的流程点击重置监控人
+    ${FramePath}    Set Variable    //iframe[contains(@src,'/backend/publicpage/SelectAuditorsCenter.aspx')]
+    #切换到选择责任人Frame
+    切换Frame    ${FramePath}
+    等待对象可见    css=.jstree-anchor    20    #先等组织架构加载出来
+    Execute Javascript    $("#selectProcessAuditors .tt-hint").removeAttr('readonly')
+    点击    css=#selectProcessAuditors .tt-input    #点击输入栏
+    输入    css=#selectProcessAuditors .tt-input    ${auditorCode}
+    点击    xpath=//*[@class='tt-suggestion tt-selectable'][1]    #显示责任人组织后点击选择
+    Unselect Frame
+    #点击确认按钮
+    点击    xpath=${FramePath}/../..//*[@class='layui-layer-btn0']
+
+流程监控_作废流程
+    [Arguments]    ${ProcessName}    ${cancelReason}
+    [Documentation]    *功能：*
+    ...
+    ...    流程监控的作废流程
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ProcessName：流程名称
+    ...
+    ...    cancelReason ：作废原因
+    ...
+    ...    *示例：*
+    ...
+    ...    流程监控_作废流程 | 手动归档-0024 | AutoTest作废流程
+    等待对象可见    //*[@class='layui-table-body layui-table-main']//td[@title='${ProcessName}']/../*[@data-field='tool']    #等待搜索名称相同的流程操作按钮出现
+    Execute Javascript    $(".layui-table-body.layui-table-main td[title='${ProcessName}']").parent().find("[data-field='tool'] [lay-event='cancelProcessByWatcher']").click()    #选择与搜索名称相同的流程点击重置监控人
+    ${FramePath}    Set Variable    //iframe[contains(@src,'/backend/processlist/CancelProcessByWatcherDialog.aspx')]
+    #切换到选择责任人Frame
+    切换Frame    ${FramePath}
+    输入    id=cancelReason    ${cancelReason}
+    Unselect Frame
+    点击    xpath=${FramePath}/../..//*[@class='layui-layer-btn0']
+
+流程监控_删除流程
+    [Arguments]    ${ProcessName}
+    [Documentation]    *功能：*
+    ...
+    ...    流程监控的删除流程
+    ...
+    ...    *参数说明：*
+    ...
+    ...    ProcessName：流程名称
+    ...
+    ...    *示例：*
+    ...
+    ...    流程监控_删除流程
+    等待对象可见    //*[@class='layui-table-body layui-table-main']//td[@title='${ProcessName}']/../*[@data-field='tool']    #等待搜索名称相同的流程操作按钮出现
+    Execute Javascript    $(".layui-table-body.layui-table-main td[title='${ProcessName}']").parent().find("[data-field='tool'] [lay-event='delWatchProcess']").click()    #选择与搜索名称相同的流程点击重置监控人
+    点击    css=a.layui-layer-btn0

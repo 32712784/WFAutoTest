@@ -29,8 +29,13 @@ case1
 
 case2
     登录    ${wf_url}    admin    1
-    ${start}    evaluate    time.time()    time
-    Wait Until Keyword Succeeds    10    1    Wait Until Element Is Not Visible    css=.mp-holder-grid-holder
-    ${end}    evaluate    time.time()    time
-    ${processTime}    evaluate    ${end}-${start}
-    log    aaa
+    Comment    ${start}    evaluate    time.time()    time
+    Comment    Wait Until Keyword Succeeds    10    1    Wait Until Element Is Not Visible    css=.mp-holder-grid-holder
+    Comment    ${end}    evaluate    time.time()    time
+    Comment    ${processTime}    evaluate    ${end}-${start}
+    Comment    Wait Until Keyword Succeeds    30s    10    Wait Until Element Is Visible    InitiateDateTime_Begin    5
+    Comment    Should Be Equal    aaa
+    点击    css=[data-nav='processSearch']
+    流程查询_搜索输入    ProcessStatus=已归档
+    点击    advancedSearchBtn
+    sleep    2

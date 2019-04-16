@@ -17,17 +17,17 @@ Resource          关键字引用.txt
     ...    *示例：*
     ...
     ...    校验流程状态 | test集中发起-0104 | 处理中
-    Wait Until Element Is Visible    id=easy_search_btn    #等待搜索按钮出现
-    点击元素    css=a[data-nav="ProcessWatchActiveList"]    #点击流程监控
+    等待对象可见    id=easy_search_btn    #等待搜索按钮出现
+    点击    css=a[data-nav="ProcessWatchActiveList"]    #点击流程监控
     Comment    Set Selenium Implicit Wait    10
-    等待加载图标显示后消失    id=pageLoading
-    Wait Until Element Is Visible    css=.layui-laypage-count    #等待共XX条元素出现
-    点击元素    css=li[data-listtype='ProcessWatchAllList']    #点击全部
+    Comment    等待加载图标显示后消失    id=pageLoading
+    等待对象可见    css=.layui-laypage-count    #等待共XX条元素出现
+    点击    css=li[data-listtype='ProcessWatchAllList']    #点击全部
     Wait Until Element Attribute Contains    id=bu_chosen_chosen    text    ${EMPTY}
     Wait Until Element Attribute Contains    id=bu_chosen_chosen    text    全部
     sleep    1
     输入    name=processName__OwnerName    ${ProcessName}
-    点击元素    easy_search_btn    #点击搜索
+    点击    easy_search_btn    #点击搜索
     Wait For Condition    return $("#userTable .layui-table-body.layui-table-main > table > tbody > tr").size() == 1    #等待查询结果为1条
     Wait For Condition    return $.trim($(".layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']").text()) == "${ProcessName}"    #等待搜索结果第一条流程名称等于特定流程名称
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a    ${ProcessName}

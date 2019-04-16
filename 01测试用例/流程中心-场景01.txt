@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation     场景1
 ...               数据准备：
-...               流程模板（A发起-A审批-A手动归档）
+...               流程模板（A发起-A审批-A手动归档）--ProcessModule_1
 Resource          ../02关键字封装/关键字引用.txt
 Library           Selenium2Library    timeout=20
 
@@ -12,7 +12,7 @@ Library           Selenium2Library    timeout=20
     [Documentation]    新建流程并保存草稿
     登录    ${wf_url}    admin    1
     新建流程    ${ProcessModule_1}    SaveDraft=保存草稿
-    点击元素    css=div[type='dialog'] .layui-layer-btn1
+    点击    css=div[type='dialog'] .layui-layer-btn1
     Wait For Condition    return document.title == '流程草稿'
     Title Should Be    流程草稿
     ${ProcessName}    Get Text    id=js-processName
@@ -63,7 +63,7 @@ Library           Selenium2Library    timeout=20
     [Documentation]    通过待办进入审批，同意，验证审批成功，流程监控状态为已通过
     登录    ${wf_url}    admin    1
     我办理的流程查询    待办    ${ProcessName}
-    点击元素    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
+    点击    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
     ${handle}    select window    NEW    #切换到新开窗口
     流程审批操作    同意    审批同意    2    3
     select window    Main
@@ -88,7 +88,7 @@ Library           Selenium2Library    timeout=20
     [Documentation]    进行归档审批，验证流程监控状态为已归档
     登录    ${wf_url}    admin    1
     我办理的流程查询    待办    ${ProcessName}
-    点击元素    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
+    点击    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
     ${handle}    select window    NEW    #切换到新开窗口
     流程审批操作    归档    归档同意    3    3
     select window    Main

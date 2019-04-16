@@ -1,7 +1,7 @@
 *** Settings ***
 Documentation     场景2-2：在我发起的流程-已通过，操作下的按钮处理流程，并在各个场景能查询到结果。
 ...               数据准备：
-...               1、流程模板（A发起-A手动归档）
+...               1、流程模板（A发起-A手动归档）--ProcessModule_2
 Resource          ../02关键字封装/关键字引用.txt
 Library           Selenium2Library    timeout=20
 
@@ -12,7 +12,7 @@ Library           Selenium2Library    timeout=20
     [Documentation]    新建流程并保存草稿
     登录    ${wf_url}    admin    1
     新建流程    ${ProcessModule_2}    SaveDraft=保存草稿
-    点击元素    css=div[type='dialog'] .layui-layer-btn1
+    点击    css=div[type='dialog'] .layui-layer-btn1
     Wait For Condition    return document.title == '流程草稿'
     Title Should Be    流程草稿
     ${ProcessName}    Get Text    id=js-processName
