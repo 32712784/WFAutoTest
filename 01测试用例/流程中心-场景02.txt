@@ -2,12 +2,11 @@
 Documentation     场景2
 ...               数据准备：
 ...               1、流程模板（A发起-A审批-A手动归档）--ProcessModule_1;
-...               2、抄送人B --User2
+...               2、抄送人B --Cc
 Resource          ../02关键字封装/关键字引用.txt
 Library           Selenium2Library    timeout=20
 
 *** Variables ***
-${抄送人}            王胜成
 
 *** Test Cases ***
 01-新建流程并抄送给用户B
@@ -34,11 +33,10 @@ ${抄送人}            王胜成
     [Documentation]    对流程进行传阅操作，并验证传阅成功
     登录    ${wf_url}    admin    1
     我发起的流程查询    处理中    ${ProcessName}
-    点击    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a    #点击流程名称打开审批页面
+    点击    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] span    #点击流程名称打开审批页面
     ${handle}    select window    NEW    #切换到新开窗口
     流程审批更多操作    传阅    admin
     等待操作成功后的提示    传阅成功
-    Element Should Contain    css=.layui-layer-content.layui-layer-padding    传阅成功
     Close All Browsers
 
 04-我办理的流程-传阅查询
