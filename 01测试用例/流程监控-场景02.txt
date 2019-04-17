@@ -1,0 +1,45 @@
+*** Settings ***
+Documentation     使用草稿测试流程监控的功能，搜索，高级搜索，删除草稿。
+...               数据准备：
+...               1、流程模板（A发起-A审批-A手动归档）--ProcessModule_1；
+Resource          ../02关键字封装/关键字引用.txt
+Library           Selenium2Library    timeout=20
+
+*** Variables ***
+
+*** Test Cases ***
+01-发起流程
+    [Documentation]    数据准备用例，发起流程
+    登录    ${wf_url}    admin    1
+    新建流程    ${ProcessModule_1}    SaveDraft=保存草稿
+    点击    css=div[type='dialog'] .layui-layer-btn1
+    Wait For Condition    return document.title == '流程草稿'
+    Title Should Be    流程草稿
+    ${ProcessName}    Get Text    id=js-processName
+    ${ProcessName}    Replace String    ${ProcessName}    [    ${EMPTY}
+    ${ProcessName}    Replace String    ${ProcessName}    ]    ${EMPTY}
+    Set Global Variable    ${ProcessName}
+    log    ${ProcessName}
+    Close All Browsers
+
+02-流程监控--草稿，搜索
+    [Documentation]    数据准备用例，发起流程
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    草稿    ${ProcessName}
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
+
+02-流程监控--草稿，高级搜索
+    [Documentation]    数据准备用例，发起流程
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    草稿    ${ProcessName}    StartDate=now
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
+
+03-流程监控--草稿，删除草稿
+    [Documentation]    数据准备用例，发起流程
+    登录    ${wf_url}    admin    1
+    流程监控_搜索    草稿    ${ProcessName}    StartDate=now
+    流程监控_删除流程    ${ProcessName}
+    等待操作成功后的提示    删除成功
+    Close All Browsers

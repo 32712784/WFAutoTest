@@ -35,7 +35,10 @@ case2
     Comment    ${processTime}    evaluate    ${end}-${start}
     Comment    Wait Until Keyword Succeeds    30s    10    Wait Until Element Is Visible    InitiateDateTime_Begin    5
     Comment    Should Be Equal    aaa
-    点击    css=[data-nav='processSearch']
-    流程查询_搜索输入    ProcessStatus=已归档
-    点击    advancedSearchBtn
-    sleep    2
+    点击    css=[data-nav='ProcessWatchActiveList']
+    点击    id=nav_ProcessWatchDraftList
+    等待对象可见    //*[@class='layui-table-body layui-table-main']//td[@title='test集中发起-0145']/../*[@data-field='tool']    #等待搜索名称相同的流程操作按钮出现
+    ${layui}    Get Element Attribute    id=nav_ProcessWatchDraftList    class
+    LOG    ${layui}
+    Run Keyword If    '${layui}'.find('layui this')    点击    css=.table-btn hasAction
+    ...    LOG    false

@@ -33,7 +33,7 @@ Resource          关键字引用.txt
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a    ${ProcessName}
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessStatusShow'] > div    ${ProcessStatus}
 
-我发起和办理的流程查询校验
+流程搜索查询校验
     [Arguments]    ${ProcessName}    ${ExpectSearchCount}    ${ExpectStatus}=${EMPTY}
     [Documentation]    *功能：*
     ...
@@ -59,7 +59,7 @@ Resource          关键字引用.txt
     Should Be Equal    ${ActualProcessName}    ${ProcessName}    #校验流程名称
     Should Be Equal    '${SearchCount}'    '${ExpectSearchCount}'    #搜索结果只有一条
     #如果传入了预期状态参数，才进行状态判断
-    Run Keyword If    '${ExpectStatus}' != '${EMPTY}'    Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessStatusShow']    ${ExpectStatus}    #流程状态判断
+    Run Keyword If    '${ExpectStatus}' != ''    Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessStatusShow']    ${ExpectStatus}    #流程状态判断
 
 数据库字段值校验
     [Arguments]    ${sqlStr}    ${expectedValues}

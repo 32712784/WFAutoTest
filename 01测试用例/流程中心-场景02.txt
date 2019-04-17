@@ -27,7 +27,7 @@ ${抄送人}            王胜成
     [Documentation]    被抄送人用户进入我办理的流程--抄送，验证抄送给我的流程
     登录    ${wf_url}    ${抄送人}    1
     我办理的流程查询    抄送    ${ProcessName}
-    我发起和办理的流程查询校验    ${ProcessName}    1
+    流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
 03-传阅流程
@@ -45,19 +45,19 @@ ${抄送人}            王胜成
     [Documentation]    被传阅用户进入我办理的流程--传阅，验证存在传阅给我的流程
     登录    ${wf_url}    admin    1
     我办理的流程查询    传阅    ${ProcessName}
-    我发起和办理的流程查询校验    ${ProcessName}    1
+    流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
 05-我办理的流程-全部
     [Documentation]    我办理的流程-全部，验证能在此列表搜索到此场景的流程，输入所有条件进行查询
     登录    ${wf_url}    admin    1
     我办理的流程查询    全部    ${ProcessName}    StartDate=now    OwnerName=${UserName}
-    我发起和办理的流程查询校验    ${ProcessName}    1
+    流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
 06-我发起的流程-全部
     [Documentation]    我发起的流程-全部，验证能在此列表搜索到此场景的流程，输入所有条件进行查询
     登录    ${wf_url}    admin    1
     我发起的流程查询    全部    ${ProcessName}    StartDate=now
-    我发起和办理的流程查询校验    ${ProcessName}    1
+    流程搜索查询校验    ${ProcessName}    1
     Close All Browsers

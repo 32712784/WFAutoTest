@@ -74,14 +74,14 @@ Library           Selenium2Library    timeout=20
     [Documentation]    通过我发起的流程--已通过，验证上一步审批到归档步骤，状态为已通过
     登录    ${wf_url}    admin    1
     我发起的流程查询    已通过    ${ProcessName}
-    我发起和办理的流程查询校验    ${ProcessName}    1
+    流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
 08-我办理的流程-已办查询
     [Documentation]    进入我办理的流程--已办，验证审批后流程进入已办
     登录    ${wf_url}    admin    1
     我办理的流程查询    已办    ${ProcessName}
-    我发起和办理的流程查询校验    ${ProcessName}    1
+    流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
 09-归档审批
@@ -99,5 +99,5 @@ Library           Selenium2Library    timeout=20
     [Documentation]    进入我发起的流程--已归档，验证上一步归档的流程在此列表
     登录    ${wf_url}    admin    1
     我发起的流程查询    已归档    ${ProcessName}
-    我发起和办理的流程查询校验    ${ProcessName}    1
+    流程搜索查询校验    ${ProcessName}    1
     Close All Browsers

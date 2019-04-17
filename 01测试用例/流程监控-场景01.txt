@@ -24,53 +24,54 @@ Library           Selenium2Library    timeout=20
 
 02-流程监控--处理中，流程传阅
     登录    ${wf_url}    admin    1
-    流程监控_搜索    处理中    两步手动归档-0024
-    流程监控_传阅    两步手动归档-0024    admin
+    流程监控_搜索    处理中    ${ProcessName}
+    流程监控_传阅    ${ProcessName}    ${Circulator}
     等待操作成功后的提示    传阅成功
-    Element Should Contain    css=.layui-layer-content.layui-layer-padding    传阅成功
     Close All Browsers
 
 03-传阅人查询到传阅记录
-    登录    ${wf_url}    admin    1
+    登录    ${wf_url}    ${Circulator}    1
+    我办理的流程查询    传阅    ${ProcessName}
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
 
 04-流程监控--处理中，重设当前责任人
     登录    ${wf_url}    admin    1
-    流程监控_搜索    处理中    两步手动归档-0024
-    流程监控_重置责任人    两步手动归档-0024    王胜成
+    流程监控_搜索    处理中    ${ProcessName}
+    流程监控_重置责任人    ${ProcessName}    ${HandlerName}
     等待操作成功后的提示    重设责任人成功
-    sleep    3
     Close All Browsers
 
-05-被重置责任人查询到待办记录
+05-新责任人查询到待办记录
+    登录    ${wf_url}    ${HandlerName}    1
+    我办理的流程查询    待办    ${ProcessName}
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
 
 06-流程监控--处理中，调整流程保存
     登录    ${wf_url}    admin    1
-    流程监控_搜索    处理中    两步手动归档-0024
-    流程监控_调整流程    两步手动归档-0024
+    流程监控_搜索    处理中    ${ProcessName}
+    流程监控_调整流程    ${ProcessName}
     等待操作成功后的提示    保存成功
-    sleep    2
     Close All Browsers
 
 07-流程监控--处理中，重设监控人
     登录    ${wf_url}    admin    1
-    流程监控_搜索    处理中    两步手动归档-0024
-    流程监控_重设监控人    两步手动归档-0024    admin
+    流程监控_搜索    处理中    ${ProcessName}
+    流程监控_重设监控人    ${ProcessName}    admin
     等待操作成功后的提示    重设监控人成功
-    sleep    2
     Close All Browsers
 
 08-流程监控--处理中，作废流程
     登录    ${wf_url}    admin    1
-    流程监控_搜索    处理中    三步手动归档-0217
-    流程监控_作废流程    三步手动归档-0217    AutoTest作废流程
+    流程监控_搜索    处理中    ${ProcessName}
+    流程监控_作废流程    ${ProcessName}    AutoTest作废流程
     等待操作成功后的提示    作废成功
-    sleep    2
     Close All Browsers
 
 09-流程监控--全部，删除已作废流程
     登录    ${wf_url}    admin    1
-    流程监控_搜索    全部    三步手动归档-0217
-    流程监控_删除流程    三步手动归档-0217
+    流程监控_搜索    全部    三步手动归档-0221
+    流程监控_删除流程    三步手动归档-0221
     等待操作成功后的提示    删除成功
-    sleep    2
     Close All Browsers

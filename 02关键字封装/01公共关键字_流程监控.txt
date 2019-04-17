@@ -184,7 +184,7 @@ Resource          关键字引用.txt
     ...
     ...    流程监控_作废流程 | 手动归档-0024 | AutoTest作废流程
     等待对象可见    //*[@class='layui-table-body layui-table-main']//td[@title='${ProcessName}']/../*[@data-field='tool']    #等待搜索名称相同的流程操作按钮出现
-    Execute Javascript    $(".layui-table-body.layui-table-main td[title='${ProcessName}']").parent().find("[data-field='tool'] [lay-event='cancelProcessByWatcher']").click()    #选择与搜索名称相同的流程点击重置监控人
+    Execute Javascript    $(".layui-table-body.layui-table-main td[title='${ProcessName}']").parent().find("[data-field='tool'] [lay-event='cancelProcessByWatcher']").click()    #选择与搜索名称相同的流程点击作废流程
     ${FramePath}    Set Variable    //iframe[contains(@src,'/backend/processlist/CancelProcessByWatcherDialog.aspx')]
     #切换到选择责任人Frame
     切换Frame    ${FramePath}
@@ -206,5 +206,9 @@ Resource          关键字引用.txt
     ...
     ...    流程监控_删除流程
     等待对象可见    //*[@class='layui-table-body layui-table-main']//td[@title='${ProcessName}']/../*[@data-field='tool']    #等待搜索名称相同的流程操作按钮出现
-    Execute Javascript    $(".layui-table-body.layui-table-main td[title='${ProcessName}']").parent().find("[data-field='tool'] [lay-event='delWatchProcess']").click()    #选择与搜索名称相同的流程点击重置监控人
+    ${ClassAttr}    Get Element Attribute    id=nav_ProcessWatchDraftList    class
+    #如果是草稿页签，则点击删除按钮，否则是在全部页签，执行JS
+    ${bool}    Evaluate    ' layui-this' in '${ClassAttr}'
+    Run Keyword If    ${bool}    点击    css=.table-btn.hasAction
+    ...    ELSE    Execute Javascript    $(".layui-table-body.layui-table-main td[title='${ProcessName}']").parent().find("[data-field='tool'] [lay-event='delWatchProcess']").click()    #选择与搜索名称相同的流程点击删除流程
     点击    css=a.layui-layer-btn0

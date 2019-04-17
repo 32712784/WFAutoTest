@@ -123,14 +123,14 @@ Resource          关键字引用.txt
     ${CurTime}    Get Current Date    result_format=datetime
     ${CurTime}    evaluate    '${CurTime}'.split(' ')[0]
     #展开其他搜索条件,并输入
-    Run Keyword If    '${StartDate}' != '${EMPTY}' and '${OwnerName}' != '${EMPTY}'    Run Keywords    点击    switch_search_btn
+    Run Keyword If    '${StartDate}' != '' and '${OwnerName}' != ''    Run Keywords    点击    switch_search_btn
     ...    AND    Execute Javascript    $("#InitiateDateTime_Begin").text('${CurTime}');$("#InitiateDateTime_End").text('${CurTime}')
     ...    AND    输入    OwnerName    ${OwnerName}
     ...    AND    点击    advance_search_btn
-    ...    ELSE IF    '${StartDate}' == '${EMPTY}' and '${OwnerName}' != '${EMPTY}'    Run Keywords    点击    switch_search_btn
+    ...    ELSE IF    '${StartDate}' == '' and '${OwnerName}' != ''    Run Keywords    点击    switch_search_btn
     ...    AND    输入    OwnerName    ${OwnerName}
     ...    AND    点击    advance_search_btn
-    ...    ELSE IF    '${StartDate}' != '${EMPTY}' and '${OwnerName}' == '${EMPTY}'    Run Keywords    点击    switch_search_btn
+    ...    ELSE IF    '${StartDate}' != '' and '${OwnerName}' == ''    Run Keywords    点击    switch_search_btn
     ...    AND    Execute Javascript    $("#InitiateDateTime_Begin").text('${CurTime}');$("#InitiateDateTime_End").text('${CurTime}')
     ...    AND    点击    advance_search_btn
     ...    ELSE    点击    easy_search_btn    #点击搜索

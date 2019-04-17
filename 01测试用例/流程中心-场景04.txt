@@ -52,14 +52,14 @@ Library           Selenium2Library    timeout=20
     [Documentation]    我办理的流程-全部，验证能在此列表搜索到作废的流程，且状态正确
     登录    ${wf_url}    admin    1
     我办理的流程查询    全部    ${ProcessName}
-    我发起和办理的流程查询校验    ${ProcessName}    1    已作废
+    流程搜索查询校验    ${ProcessName}    1    已作废
     Close All Browsers
 
 06-我发起的流程--全部，搜索
     [Documentation]    我发起的流程-全部，验证能在此列表搜索到作废的流程，且状态正确
     登录    ${wf_url}    admin    1
     我发起的流程查询    全部    ${ProcessName}
-    我发起和办理的流程查询校验    ${ProcessName}    1    已作废
+    流程搜索查询校验    ${ProcessName}    1    已作废
     Close All Browsers
 
 07-流程监控查询状态
