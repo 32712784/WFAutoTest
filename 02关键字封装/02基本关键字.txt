@@ -30,6 +30,27 @@ Library           AutoItLibrary
     Comment    \    sleep    1
     Comment    Run Keyword If    ${status}==False    Fail    ${MaximumClicks}次无法成功点击，请检查！
 
+点击(视窗内)
+    [Arguments]    ${locator}    ${timeout}=None    ${modifier}=False
+    [Documentation]    *功能：*
+    ...
+    ...    在分辨率不足时,元素可能不在视窗内,先拖动元素到视窗内,再点击,目前仅支持css定位
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locator : 元素对象
+    ...
+    ...    timeout ：超时时间，最长等待多久后超时失败
+    ...
+    ...    modifier : 添加键盘事件，详见click element
+    ...
+    ...    *示例：*
+    ...
+    ...    点击元素 | id=easy_search_btn | 10 | CTRL
+    等待对象可见    ${locator}    ${timeout}
+    拖动元素到视窗内    ${locator}
+    Wait Until Keyword Succeeds    10s    1s    Click Element    ${locator}    ${modifier}
+
 等待加载图标显示后消失
     [Arguments]    ${locator}
     [Documentation]    *功能：*
@@ -157,3 +178,18 @@ Library           AutoItLibrary
     ...    等待对象不可见 | id=
     #防止出现StaleElementReferenceException: Message: stale element reference: element is not attached to the page document
     Wait Until Keyword Succeeds    10s    1s    Wait Until Element Attribute Contains    ${locator}    ${attr}    ${contains_val}
+
+拖动元素到视窗内
+    [Arguments]    ${locator}
+    [Documentation]    *功能：*
+    ...
+    ...    通过执行js方式将元素拖到视窗内,防止操作不到元素失败
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locator : 元素定位
+    ...
+    ...    *示例：*
+    ...
+    ...    等待对象不可见 | id=
+    Execute Javascript    document.querySelector("${locator}").scrollIntoView(true);

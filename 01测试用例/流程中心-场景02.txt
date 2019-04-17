@@ -13,7 +13,7 @@ ${抄送人}            王胜成
 01-新建流程并抄送给用户B
     [Documentation]    新建流程，并添加抄送人，发起后，流程监控验证状态为处理中
     登录    ${wf_url}    admin    1
-    新建流程    ${ProcessModule_1}    ${抄送人}
+    新建流程    ${ProcessModule_1}    ${Cc}
     Wait Until Element Attribute Contains    css=.record-line.em.node-HandleText    text    AutoTest    #等待审批记录出现AutoTest
     ${ProcessName}    Get Text    id=js-title
     ${UserName}    Get Text    css=div[data-node-status='3'] .inline-block.align-middle.handler-name
@@ -25,7 +25,7 @@ ${抄送人}            王胜成
 
 02-我办理的流程-抄送查询
     [Documentation]    被抄送人用户进入我办理的流程--抄送，验证抄送给我的流程
-    登录    ${wf_url}    ${抄送人}    1
+    登录    ${wf_url}    ${Cc}    1
     我办理的流程查询    抄送    ${ProcessName}
     流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
