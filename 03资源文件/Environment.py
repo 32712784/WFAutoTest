@@ -5,7 +5,7 @@ wf_url = "http://27.17.30.140:11053/backend/processlist/center.aspx?classname=ha
 
 #------------------------------------------------------------------------------------------------------------------------------
 #数据库连接字符串，sqlserver连接字符串参考：http://www.asp101.com/articles/john/connstring/default.asp
-conStr = "Provider=MSDASQL; Driver={SQL Server}; Server=10.5.11.4\\MSSQLSERVER2014; Database=hnqcddc_600sp3_Upgrade; UID=sa; PWD=95938;"
+conStr = "Provider=MSDASQL; Driver={SQL Server}; Server=***; Database=***; UID=***; PWD=***;"
 
 #------------------------------------------------------------------------------------------------------------------------------
 '''

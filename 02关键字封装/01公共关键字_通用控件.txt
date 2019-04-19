@@ -68,3 +68,26 @@ Resource          关键字引用.txt
     Unselect Frame
     #根据添加责任人frame路径点击确认按钮
     点击    xpath=${FramePath}/../..//*[@class='layui-layer-btn0']
+
+设定日期
+    [Arguments]    ${jquerySyn}    ${Number}=0
+    [Documentation]    *功能：*
+    ...
+    ...    对日期控件进行输入，通过Number参数可以在当前日期进行前后加减
+    ...    --jquerySyn 必须用双引号，待改进
+    ...
+    ...    *参数说明：*
+    ...
+    ...    jquerySyn ：日期控件的jquery语法，需要使用JS输入
+    ...
+    ...    Number : 当前日期加或减，比如-1则是当前日期-1天，+2则是当前日期+2天，只能传入正负数字。默认为0，即当日日期
+    ...
+    ...
+    ...    *示例：*
+    ...
+    ...    设定日期 | $("#initiateDateTimeStart") | -1
+    ...
+    #获取当前日期，用于发起时间范围和结束时间范围
+    ${date}    Date Calc    ${Number}
+    ${js}    Evaluate    '${jquerySyn}'+'.text("${date}")'
+    Execute Javascript    ${js}

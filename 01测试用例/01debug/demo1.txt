@@ -35,10 +35,7 @@ case2
     Comment    ${processTime}    evaluate    ${end}-${start}
     Comment    Wait Until Keyword Succeeds    30s    10    Wait Until Element Is Visible    InitiateDateTime_Begin    5
     Comment    Should Be Equal    aaa
-    点击    css=[data-nav='ProcessInitiateDoingList']
-    输入    processName    三步手动归档-0229
-    点击    easy_search_btn
-    等待对象可见    css=[lay-event='cancelProcess']
-    ${a}    Get WebElements    css=[lay-event='cancelProcess']
-    Execute Javascript    'arguments[0].scrollIntoView(false);'    ${a}
-    sleep    5
+    点击    css=[data-nav='processSearch']
+    等待对象可见    id=initiateDateTimeStart
+    设定日期    $("#initiateDateTimeStart")    +5
+    sleep    3

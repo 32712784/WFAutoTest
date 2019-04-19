@@ -1,5 +1,6 @@
 import os
 import sys
+import datetime
 
 class main:
     def create_log_path(self, case=None, outputdir=None):
@@ -46,3 +47,14 @@ class main:
         base = os.path.expanduser('~')
         os.system('rm -rf ' + os.path.join(base, 'robotframework/logs', 'current'))
         os.system("ln -s " + os.path.join(base, 'robotframework/logs', 'current') + ' ' + G_TEST_PATH)
+
+    def DateCalc(self,AddDate='0'):
+        '''Date calculation
+        Usage: | DateCalc | -1
+
+        :param AddDate:
+        :return: YYYY-MM-DD
+        '''
+        d1 = datetime.datetime.now()
+        d2 = d1 - datetime.timedelta(days=-int(AddDate))
+        return d2.strftime("%Y-%m-%d")

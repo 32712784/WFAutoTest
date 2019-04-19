@@ -1,3 +1,15 @@
 *** Settings ***
 Resource          ../03资源文件/通用参数.txt
 Resource          关键字引用.txt
+
+*** Keywords ***
+新增代理人
+    [Arguments]    ${AuditorCode}
+    #用户名称
+    添加责任人    css=#auditor .js-select-auditors    ${AuditorCode}    Page=backend
+    #代理人
+    添加责任人    css=#agent .js-select-auditors    ${AuditorCode}    Page=backend
+    #代理开始日期
+    设定日期    $("#textAgentBeginDate")
+    #代理开始日期
+    设定日期    $("#textAgentEndDate")
