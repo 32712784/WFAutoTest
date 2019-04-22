@@ -72,13 +72,15 @@ Resource          关键字引用.txt
     #如果起始日，当前步骤，当前责任人一项或多项不为空，点击展开筛选
     Run Keyword If    '${StartDate}' != '${EMPTY}' or '${StepName}'!='${EMPTY}' or '${UserName}'!='${EMPTY}' or '${FinishDate}'!='${EMPTY}'    点击    switch_search_btn
     #起始日不为空，输入起始日
-    Run Keyword If    '${StartDate}' != '${EMPTY}'    Execute Javascript    $("#InitiateDateTime_Begin").text('${CurTime}');$("#InitiateDateTime_End").text('${CurTime}')
+    Run Keyword If    '${StartDate}' != ''    run keywords    设定日期    $("#InitiateDateTime_Begin")
+    ...    AND    设定日期    $("#FinishDateTime_Begin")
     #归档日不为空，输入归档日
-    Run Keyword If    '${FinishDate}' != '${EMPTY}'    Execute Javascript    $("#FinishDateTime_Begin").text('${CurTime}');$("#FinishDateTime_Begin").text('${CurTime}')
+    Run Keyword If    '${FinishDate}' != ''    run keywords    设定日期    $("#FinishDateTime_Begin")
+    ...    AND    设定日期    $("#FinishDateTime_Begin")
     #当前步骤不为空，输入
-    Run Keyword If    '${StepName}'!='${EMPTY}'    输入    id=StepName    ${StepName}
+    Run Keyword If    '${StepName}'!= ''    输入    id=StepName    ${StepName}
     #当前责任人不为空，输入
-    Run Keyword If    '${UserName}'!='${EMPTY}'    输入    id=CurAuditorNames    ${UserName}
+    Run Keyword If    '${UserName}'!=''    输入    id=CurAuditorNames    ${UserName}
 
 流程监控_传阅
     [Arguments]    ${ProcessName}    ${auditorCode}
