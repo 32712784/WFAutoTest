@@ -22,7 +22,14 @@ Library           Selenium2Library    timeout=20
     log    ${ProcessName}
     Close All Browsers
 
-02-进入我发起的流程--草稿，删除
+02-进入我发起的流程--草稿，输入所有条件查询
+    [Documentation]    删除保存的草稿
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    草稿    ${ProcessName}    StartDate=now
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
+
+03-进入我发起的流程--草稿，删除
     [Documentation]    删除保存的草稿
     登录    ${wf_url}    admin    1
     我发起的流程查询    草稿    ${ProcessName}
@@ -30,7 +37,7 @@ Library           Selenium2Library    timeout=20
     等待操作成功后的提示    删除成功
     Close All Browsers
 
-03-进入我发起的流程--草稿，查询不到
+04-进入我发起的流程--草稿，查询不到
     [Documentation]    删除草稿后再进行查询，搜索不到结果
     登录    ${wf_url}    admin    1
     我发起的流程查询    草稿    ${ProcessName}    0

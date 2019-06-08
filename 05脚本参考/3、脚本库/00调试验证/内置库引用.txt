@@ -1,8 +1,0 @@
-*** Settings ***
-Library           Selenium2Library
-Library           AutoItLibrary
-Library           OperatingSystem
-Library           Dialogs
-Library           String
-Library           random
-Library           sys

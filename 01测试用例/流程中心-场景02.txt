@@ -29,33 +29,47 @@ Library           Selenium2Library    timeout=20
     流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
-03-传阅流程
+03-我办理的流程-抄送，输入所有条件查询
+    [Documentation]    被抄送人用户进入我办理的流程--抄送，验证抄送给我的流程
+    登录    ${wf_url}    ${Cc}    1
+    我办理的流程查询    抄送    ${ProcessName}    now    ${InitiatePerson}    处理中
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
+
+04-传阅流程
     [Documentation]    对流程进行传阅操作，并验证传阅成功
     登录    ${wf_url}    admin    1
     我发起的流程查询    处理中    ${ProcessName}
     点击    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] span    #点击流程名称打开审批页面
     ${handle}    select window    NEW    #切换到新开窗口
-    流程审批更多操作    传阅    admin
+    流程审批更多操作    传阅    ${Circulator}
     等待操作成功后的提示    传阅成功
     Close All Browsers
 
-04-我办理的流程-传阅查询
+05-我办理的流程-传阅查询
     [Documentation]    被传阅用户进入我办理的流程--传阅，验证存在传阅给我的流程
-    登录    ${wf_url}    admin    1
+    登录    ${wf_url}    ${Circulator}    1
     我办理的流程查询    传阅    ${ProcessName}
     流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
-05-我办理的流程-全部
-    [Documentation]    我办理的流程-全部，验证能在此列表搜索到此场景的流程，输入所有条件进行查询
-    登录    ${wf_url}    admin    1
-    我办理的流程查询    全部    ${ProcessName}    StartDate=now    OwnerName=${UserName}
+06-我办理的流程-传阅，输入所有条件查询
+    [Documentation]    被传阅用户进入我办理的流程--传阅，验证存在传阅给我的流程
+    登录    ${wf_url}    ${Circulator}    1
+    我办理的流程查询    传阅    ${ProcessName}    now    ${InitiatePerson}    处理中
     流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
-06-我发起的流程-全部
-    [Documentation]    我发起的流程-全部，验证能在此列表搜索到此场景的流程，输入所有条件进行查询
+07-我办理的流程-全部
+    [Documentation]    我办理的流程-全部，验证能在此列表搜索到此场景的流程，输入所有条件进行查询
     登录    ${wf_url}    admin    1
-    我发起的流程查询    全部    ${ProcessName}    StartDate=now
-    流程搜索查询校验    ${ProcessName}    1
+    我办理的流程查询    全部    ${ProcessName}    now    ${InitiatePerson}    处理中
+    流程搜索查询校验    ${ProcessName}    1    处理中
+    Close All Browsers
+
+08-我发起的流程-全部
+    [Documentation]    我发起的流程-全部，验证能在此列表搜索到此场景的流程，输入所有条件进行查询
+    登录    ${wf_url}    ${InitiatePerson}    1
+    我发起的流程查询    全部    ${ProcessName}    StartDate=now    CurAuditorNames=${InitiatePerson}
+    流程搜索查询校验    ${ProcessName}    1    处理中
     Close All Browsers

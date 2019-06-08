@@ -23,23 +23,23 @@ Library           Selenium2Library    timeout=20
     Close All Browsers
 
 02-流程监控--草稿，搜索
-    [Documentation]    数据准备用例，发起流程
+    [Documentation]    流程监控搜索保存的草稿
     登录    ${wf_url}    admin    1
     流程监控_搜索    草稿    ${ProcessName}
     流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
-02-流程监控--草稿，高级搜索
-    [Documentation]    数据准备用例，发起流程
+03-流程监控--草稿，高级搜索
+    [Documentation]    流程监控-草稿，展开高级搜索，输入所有选项搜索
     登录    ${wf_url}    admin    1
     流程监控_搜索    草稿    ${ProcessName}    StartDate=now
     流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
-03-流程监控--草稿，删除草稿
-    [Documentation]    数据准备用例，发起流程
+04-流程监控--草稿，删除草稿
+    [Documentation]    通过流程监控删除草稿
     登录    ${wf_url}    admin    1
-    流程监控_搜索    草稿    ${ProcessName}    StartDate=now
+    流程监控_搜索    全部    ${ProcessName}    StartDate=now
     流程监控_删除流程    ${ProcessName}
     等待操作成功后的提示    删除成功
     Close All Browsers

@@ -35,7 +35,24 @@ case2
     Comment    ${processTime}    evaluate    ${end}-${start}
     Comment    Wait Until Keyword Succeeds    30s    10    Wait Until Element Is Visible    InitiateDateTime_Begin    5
     Comment    Should Be Equal    aaa
-    点击    css=[data-nav='processSearch']
-    等待对象可见    id=initiateDateTimeStart
-    设定日期    $("#initiateDateTimeStart")    +5
-    sleep    3
+    点击    css=thead [data-field='SysActiveDateTime']
+    Comment    sleep    1
+    Comment    点击    css=thead [data-field='SysActiveDateTime']
+    sleep    2
+    排序校验(内容无中文)    css=tbody [data-field='SysActiveDateTime']    title    asc
+    Comment    @{titles}    Create List
+    Comment    @{elements}    Get WebElements    css=tbody [data-field='ProcessName']
+    Comment    :FOR    ${element}    IN    @{elements}
+    Comment    \    ${value}    Get Element Attribute    ${element}    title
+    Comment    \    Append To List    ${titles}    ${value}
+    Comment    log    ${titles}
+    Comment    @{sort}    Evaluate    sorted(@{titles},reverse=True)
+    Comment    log    ${sort}
+    Comment    ${result}    Evaluate    cmp(@{titles},@{sort})
+
+case3
+    @{titles}    Create List    三步手动归档-0234    三步手动归档-0230    三步手动归档-0233
+    @{sort}    Evaluate    sorted(@{titles},reverse=True)
+    : FOR    ${a}    IN    @{sort}
+    \    log    ${a}
+    \    ${b}    Evaluate    '${a}'.decode("string_escape")

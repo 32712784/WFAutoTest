@@ -33,15 +33,28 @@ Library           Selenium2Library    timeout=20
     数据库字段值校验    SELECT WakeSubject FROM dbo.p_TaskWake WHERE WakeSubject LIKE '${remindString}%'    ${remindString}（第1次催办）
     Close All Browsers
 
-03-我办理的流程-催办图标
+03-我发起的流程-处理中，输入所有条件查询
+    [Documentation]    我发起的流程-处理中，输入所有查询条件，查询成功
+    登录    ${wf_url}    ${InitiatePerson}    1
+    我发起的流程查询    处理中    ${ProcessName}    StartDate=now    CurAuditorNames=${InitiatePerson}
+    流程搜索查询校验    ${ProcessName}    1    处理中
+    Close All Browsers
+
+04-我办理的流程-催办图标
     [Documentation]    我办理的流程-待办，验证能在此列表搜索已催办的流程有催办图标
     登录    ${wf_url}    admin    1
-    Comment    ${ProcessName}    Set Variable    test集中发起-0163
     我办理的流程查询    待办    ${ProcessName}
     校验急催超图标    催
     Close All Browsers
 
-04-我发起的流程-处理中-作废
+05-我办理的流程-待办，输入所有条件查询
+    [Documentation]    用户进入我办理的流程--待办，验证输入所有条件查询成功
+    登录    ${wf_url}    ${InitiatePerson}    1
+    我办理的流程查询    待办    ${ProcessName}    now    ${InitiatePerson}
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
+
+06-我发起的流程-处理中-作废
     [Documentation]    从我发起的流程-处理中页签，查询出发起的流程，通过操作列点击作废按钮进行作废
     登录    ${wf_url}    admin    1
     Comment    ${ProcessName}    Set Variable    三步手动归档-0210
@@ -51,25 +64,22 @@ Library           Selenium2Library    timeout=20
     数据库字段值校验    SELECT ProcessStatus FROM dbo.myWorkflowProcessEntity WHERE ProcessName = '${ProcessName}'    -2
     Close All Browsers
 
-05-我办理的流程--全部，搜索
+07-我办理的流程--全部，搜索
     [Documentation]    我办理的流程-全部，通过流程名称和发起人搜索，验证能在此列表搜索到作废的流程，且状态正确
     登录    ${wf_url}    admin    1
-    Comment    ${ProcessName}    Set Variable    test集中发起-0162
-    我办理的流程查询    全部    ${ProcessName}    OwnerName=${UserName}
+    我办理的流程查询    全部    ${ProcessName}    OwnerName=${InitiatePerson}
     流程搜索查询校验    ${ProcessName}    1    已作废
     Close All Browsers
 
-06-我发起的流程--全部，搜索
+08-我发起的流程--全部，搜索
     [Documentation]    我发起的流程-全部，通过流程名称和起始时间搜索，验证能在此列表搜索到作废的流程，且状态正确
     登录    ${wf_url}    admin    1
-    Comment    ${ProcessName}    Set Variable    test集中发起-0162
     我发起的流程查询    全部    ${ProcessName}    StartDate=now
     流程搜索查询校验    ${ProcessName}    1    已作废
     Close All Browsers
 
-07-流程监控查询状态
+09-流程监控查询状态
     [Documentation]    从流程监控查询已作废的流程状态
     登录    ${wf_url}    admin    1
-    Comment    ${ProcessName}    Set Variable    test集中发起-0162
     校验流程状态    ${ProcessName}    已作废
     Close All Browsers

@@ -32,14 +32,21 @@ Library           Selenium2Library    timeout=20
     数据库字段值校验    SELECT WakeSubject FROM dbo.p_TaskWake WHERE WakeSubject LIKE '${remindString}%'    ${remindString}（第1次催办）
     Close All Browsers
 
-03-我办理的流程-催办图标
+03-我发起的流程-已通过，输入所有条件查询
+    [Documentation]    我发起的流程-已通过，输入所有查询条件，查询成功
+    登录    ${wf_url}    ${InitiatePerson}    1
+    我发起的流程查询    已通过    ${ProcessName}    StartDate=now
+    流程搜索查询校验    ${ProcessName}    1    已通过
+    Close All Browsers
+
+04-我办理的流程-催办图标
     [Documentation]    我办理的流程-待办，验证能在此列表搜索已催办的流程有催办图标
     登录    ${wf_url}    admin    1
     我办理的流程查询    待办    ${ProcessName}
     校验急催超图标    催
     Close All Browsers
 
-04-我发起的流程-已通过-作废
+05-我发起的流程-已通过-作废
     [Documentation]    从我发起的流程-已通过页签，查询出发起的流程，通过操作列点击作废按钮进行作废
     登录    ${wf_url}    admin    1
     我发起的流程查询    已通过    ${ProcessName}
@@ -48,21 +55,21 @@ Library           Selenium2Library    timeout=20
     数据库字段值校验    SELECT ProcessStatus FROM dbo.myWorkflowProcessEntity WHERE ProcessName = '${ProcessName}'    -2
     Close All Browsers
 
-05-我办理的流程--全部，搜索
+06-我办理的流程--全部，搜索
     [Documentation]    我办理的流程-全部，验证能在此列表搜索到作废的流程，且状态正确
     登录    ${wf_url}    admin    1
     我办理的流程查询    全部    ${ProcessName}
     流程搜索查询校验    ${ProcessName}    1    已作废
     Close All Browsers
 
-06-我发起的流程--全部，搜索
+07-我发起的流程--全部，搜索
     [Documentation]    我发起的流程-全部，验证能在此列表搜索到作废的流程，且状态正确
     登录    ${wf_url}    admin    1
     我发起的流程查询    全部    ${ProcessName}
     流程搜索查询校验    ${ProcessName}    1    已作废
     Close All Browsers
 
-07-流程监控查询状态
+08-流程监控查询状态
     [Documentation]    从流程监控查询已作废的流程状态
     登录    ${wf_url}    admin    1
     校验流程状态    ${ProcessName}    已作废

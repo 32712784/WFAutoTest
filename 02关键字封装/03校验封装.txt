@@ -3,7 +3,7 @@ Resource          关键字引用.txt
 
 *** Keywords ***
 校验流程状态
-    [Arguments]    ${ProcessName}    ${ProcessStatus}
+    [Arguments]    ${ProcessName}    ${ProcessStatus}    ${CurAuditorNames}=
     [Documentation]    *功能：*
     ...
     ...    通过流程监控-全部，查询流程名称对应的流程状态
@@ -23,8 +23,8 @@ Resource          关键字引用.txt
     Comment    等待加载图标显示后消失    id=pageLoading
     等待对象可见    css=.layui-laypage-count    #等待共XX条元素出现
     点击    css=li[data-listtype='ProcessWatchAllList']    #点击全部
-    Wait Until Element Attribute Contains    id=bu_chosen_chosen    text    ${EMPTY}
-    Wait Until Element Attribute Contains    id=bu_chosen_chosen    text    全部
+    Comment    Wait Until Element Attribute Contains    id=bu_chosen_chosen    text    ${EMPTY}
+    Comment    Wait Until Element Attribute Contains    id=bu_chosen_chosen    text    全部
     sleep    1
     输入    name=processName__OwnerName    ${ProcessName}
     点击    easy_search_btn    #点击搜索
@@ -32,12 +32,13 @@ Resource          关键字引用.txt
     Wait For Condition    return $.trim($(".layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']").text()) == "${ProcessName}"    #等待搜索结果第一条流程名称等于特定流程名称
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a    ${ProcessName}
     Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessStatusShow'] > div    ${ProcessStatus}
+    Run Keyword If    '${CurAuditorNames}'!=''    Element Text Should Be    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='CurAuditorNames'] > div    ${CurAuditorNames}
 
 流程搜索查询校验
     [Arguments]    ${ProcessName}    ${ExpectSearchCount}    ${ExpectStatus}=${EMPTY}
     [Documentation]    *功能：*
     ...
-    ...    我发我和办理的流程查询校验，可以校验名称+搜索结果数量。或者校验名称+搜索结果数量+流程状态
+    ...    流程查询搜索结果校验，可以校验名称+搜索结果数量。或者校验名称+搜索结果数量+流程状态
     ...
     ...    *参数说明：*
     ...
@@ -49,9 +50,9 @@ Resource          关键字引用.txt
     ...
     ...    *示例：*
     ...
-    ...    我发我和办理的流程查询校验 | test集中发起-0104 | 1
+    ...    流程搜索查询校验 | test集中发起-0104 | 1
     ...
-    ...    我发我和办理的流程查询校验 | test集中发起-0104 | 1 | 处理中
+    ...    流程搜索查询校验 | test集中发起-0104 | 1 | 处理中
     ${SearchCount}    Get Element Count    css=.layui-table-body.layui-table-main tr    #获取搜索结果数量
     ${ActualProcessName}    Get Text    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName']
     #急催超在流程名称前，影响判断
@@ -132,3 +133,35 @@ Resource          关键字引用.txt
     ...    status timeout
     #判断对应的元素存在
     Page Should Contain Element    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] [class='${IconElement}']    message=搜索结果不存在“${ExpectIcon}”图标
+
+排序校验(内容无中文)
+    [Arguments]    ${locators}    ${attribute}    ${OrderBy}
+    [Documentation]    *功能：*
+    ...
+    ...    排序校验无中文列，校验点击排序按钮后是否排序正确
+    ...
+    ...    *参数说明：*
+    ...
+    ...    locators : 表单列body元素定位
+    ...
+    ...    attribute : 属性
+    ...
+    ...    OrderBy : 对属性值排序，asc升序，desc降序
+    ...
+    ...    *示例：*
+    ...
+    ...    排序校验(内容无中文) | css=tbody [data-field='SysActiveDateTime'] | title | asc
+    @{values}    Create List
+    @{elements}    Get WebElements    ${locators}
+    #获取到列的所有元素后，循环获取元素属性值，加入到list
+    : FOR    ${element}    IN    @{elements}
+    \    ${value}    Get Element Attribute    ${element}    ${attribute}
+    \    Append To List    ${values}    ${value}
+    log    ${values}
+    #将获取到的list，按照预期升序或降序进行排序
+    @{sort}    Run Keyword If    '${OrderBy}'.lower() == 'asc'    Evaluate    sorted(@{values},reverse=True)
+    ...    ELSE    Evaluate    sorted(@{values},reverse=False)
+    log    ${sort}
+    #对比获取到的list和排序后的list是否一致，判断排序是否成功
+    ${result}    Evaluate    cmp(@{values},@{sort})
+    Should Be Equal    '${result}'    '0'

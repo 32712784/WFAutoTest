@@ -14,17 +14,17 @@ Resource          关键字引用.txt
     ...
     ...    ProcessName : 输入需要查询的流程名称
     ...
-    ...    UserName ：发起人
+    ...    UserName ：发起人，输入用户名或code均可
     ...
     ...    FormKeyWords：表单关键字
     ...
-    ...    ApproveName：审批人
+    ...    ApproveName：审批人，输入用户名或code均可
     ...
     ...    InitiateDateTime：发起时间范围，开始和结束暂时只能要么输入当前日期，要么都不输入
     ...
     ...    ProcessStatus：流程状态
     ...
-    ...    HandlerName：当前责任人
+    ...    HandlerName：当前责任人，输入用户名或code均可
     ...
     ...    FinishDateTime：结束时间范围，开始和结束暂时只能要么输入当前日期，要么都不输入
     ...
@@ -39,14 +39,18 @@ Resource          关键字引用.txt
     ${CurTime}    Get Current Date    result_format=datetime
     ${CurTime}    evaluate    '${CurTime}'.split(' ')[0]
     Run Keyword If    '${ProcessName}' != ''    输入    id=processName    ${ProcessName}    #流程标题
-    Run Keyword If    '${UserName}' != ''    输入    id=initiatePerson    ${UserName}    #发起人
+    Run Keyword If    '${UserName}' != ''    添加责任人    css=#js-selectInitiatePerson .js-select-auditors    ${UserName}    Page=backend    #发起人
     Run Keyword If    '${FormKeyWords}' != ''    输入    id=formKeyWords    ${FormKeyWords}    #表单关键字
-    Run Keyword If    '${ApproveName}' != ''    输入    id=approvePerson    ${ApproveName}    #审批人
-    Run Keyword If    '${InitiateDateTime}' != ''    Execute Javascript    $("#initiateDateTimeStart").text('${CurTime}');$("#initiateDateTimeEnd").text('${CurTime}')    #发起时间
+    Run Keyword If    '${ApproveName}' != ''    添加责任人    css=#js-selectApprovePerson .js-select-auditors    ${ApproveName}    Page=backend    #审批人
+    #发起时间范围
+    Run Keyword If    '${InitiateDateTime}' != ''    run keywords    设定日期    $("#initiateDateTimeStart")
+    ...    AND    设定日期    $("#initiateDateTimeEnd")
     #流程状态
     Run Keyword If    '${ProcessStatus}' != ''    run keywords    点击    id=select-processStatus
     ...    AND    点击    //*[@id='popup-processStatus']/li[text()='${ProcessStatus}']
-    Run Keyword If    '${HandlerName}' != ''    输入    id=handlePerson    ${HandlerName}    #当前责任人
-    Run Keyword If    '${FinishDateTime}' != ''    Execute Javascript    $("#finishDateTimeStart").text('${CurTime}');$("#finishDateTimeEnd").text('${CurTime}')    #结束时间
+    Run Keyword If    '${HandlerName}' != ''    添加责任人    css=#js-selectHandlePerson .js-select-auditors    ${HandlerName}    Page=backend    #当前责任人
+    #结束时间范围
+    Run Keyword If    '${FinishDateTime}' != ''    run keywords    设定日期    $("#finishDateTimeStart")
+    ...    AND    设定日期    $("#finishDateTimeEnd")
     Run Keyword If    '${CompanyName}' != ''    输入    id=buname    ${CompanyName}    #所属公司
     Run Keyword If    '${BusinessType}' != ''    选择业务类型    css=.wrap-selectAuditors.cf .iconfont.icon-add.color-blue    ${BusinessType}    #业务类型

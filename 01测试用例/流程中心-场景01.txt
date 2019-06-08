@@ -84,20 +84,34 @@ Library           Selenium2Library    timeout=20
     流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
 
-09-归档审批
+09-我办理的流程--已办，输入所有条件查询
+    [Documentation]    进入我办理的流程--已办，验证审批后流程进入已办
+    登录    ${wf_url}    ${InitiatePerson}    1
+    我办理的流程查询    已办    ${ProcessName}    now    ${InitiatePerson}    已通过
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
+
+10-归档审批
     [Documentation]    进行归档审批，验证流程监控状态为已归档
     登录    ${wf_url}    admin    1
     我办理的流程查询    待办    ${ProcessName}
     点击    css=.layui-table-body.layui-table-main tr[data-index='0'] td[data-field='ProcessName'] a
-    ${handle}    select window    NEW    #切换到新开窗口
+    等待窗口切换成功    #切换到新开窗口
     流程审批操作    归档    归档同意    3    3
     select window    Main
     校验流程状态    ${ProcessName}    已归档
     Close All Browsers
 
-10-我发起的流程-已归档查询
+11-我发起的流程-已归档查询
     [Documentation]    进入我发起的流程--已归档，验证上一步归档的流程在此列表
     登录    ${wf_url}    admin    1
     我发起的流程查询    已归档    ${ProcessName}
+    流程搜索查询校验    ${ProcessName}    1
+    Close All Browsers
+
+12-我发起的流程-已归档，输入所有条件查询
+    [Documentation]    进入我发起的流程--已归档，验证上一步归档的流程在此列表
+    登录    ${wf_url}    admin    1
+    我发起的流程查询    已归档    ${ProcessName}    StartDate=now
     流程搜索查询校验    ${ProcessName}    1
     Close All Browsers
