@@ -27,8 +27,8 @@ Resource          关键字引用.txt
     ...
     ...    登录 | admin | 1 | http://192.168.236.3:4444/wd/hub
     open browser    ${login_url}    chrome    remote_url=http://192.168.236.3:4444/wd/hub
-    Maximize Browser Window
-    Comment    Set Window Size    1360    768
+    Comment    Maximize Browser Window
+    Set Window Size    1360    768
     Wait For Condition    return jQuery.active==0    # 等待页面加载完成
     input text    user    ${userName}
     input password    pwd    ${password}
